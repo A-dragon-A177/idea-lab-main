@@ -848,21 +848,21 @@ const BlogPreview = ({ publicId }: BlogPreviewProps) => {
                         </div>
                       ) : section.type === "image" ? (
                         // Render Image Section — no label in preview
-                        <div className="pl-4">
+                        <div className="pl-4 flex justify-center bg-muted/5 rounded-xl overflow-hidden">
                           <img
                             src={section.content}
                             alt={section.title}
-                            className="w-full object-cover max-h-[500px]"
+                            className="max-w-full h-auto max-h-[600px] object-contain rounded-xl"
                           />
                         </div>
                       ) : section.type === "video" ? (
                         // Render Video Section — no label in preview
-                        <div className="pl-4">
+                        <div className="pl-4 flex justify-center rounded-xl overflow-hidden bg-black">
                           <video
                             src={section.content}
                             controls
                             preload="metadata"
-                            className="w-full max-h-[500px] rounded-xl bg-black"
+                            className="max-w-full h-auto max-h-[600px] object-contain rounded-xl"
                           />
                         </div>
                       ) : (

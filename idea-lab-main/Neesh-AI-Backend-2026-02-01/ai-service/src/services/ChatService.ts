@@ -3,7 +3,8 @@ import { EmbeddingService } from './EmbeddingService';
 import { LlmService } from './LlmService';
 import { LearningService } from './LearningService';
 
-const UNANSWERABLE_FALLBACK = "As of now this needs to be discussed, I will let you know when this is discussed.";
+// Fallback string for when no context is found AND LLM fails
+const NO_CONTEXT_FALLBACK = "I don't have enough specific information in my knowledge base to answer that definitely, but I can help you with other project-related questions!";
 
 export interface ChatResponse {
     answer: string;
@@ -186,11 +187,7 @@ export class ChatService {
                 const generated = await this.llmService.generateAnswer(query, contextTexts, provider, apiKey);
                 answer = generated.answer;
 
-                // If the LLM returned the exact fallback phrase, keep it as-is (LLM decided it can't answer)
-                if (answer === UNANSWERABLE_FALLBACK) {
-                    console.log('[ChatService] LLM returned fallback phrase — marking as unanswerable');
-                    confidence = 'LOW';
-                } else if (chunks.length === 0) {
+                if (chunks.length === 0) {
                     // LLM answered without RAG context — mark as LOW for reporting but keep the answer
                     confidence = 'LOW';
                     console.log(`[ChatService] LLM answered without KB context, confidence: LOW`);
@@ -199,8 +196,16 @@ export class ChatService {
                 }
             } catch (llmError: any) {
                 console.error(`[ChatService] LLM generation failed: ${llmError.message}`);
-                answer = UNANSWERABLE_FALLBACK;
-                confidence = 'LOW';
+                
+                if (chunks.length > 0) {
+                    // EMERGENCY MODE: Synthesize offline answer from chunks
+                    console.log('[ChatService] Entering EMERGENCY OFFLINE MODE (LLM failed but context available)');
+                    answer = this.generateOfflineAnswer(query, chunks);
+                    confidence = 'LOW'; // Mark as LOW because it's not a real LLM answer
+                } else {
+                    answer = NO_CONTEXT_FALLBACK;
+                    confidence = 'LOW';
+                }
             }
 
             finalSources = chunks.map(c => ({
@@ -277,11 +282,32 @@ export class ChatService {
 
     private calculateConfidence(chunks: QueryResult[]): 'HIGH' | 'MEDIUM' | 'LOW' {
         if (chunks.length === 0) return 'LOW';
-        const allHigh = chunks.every(c => c.similarity >= 0.20);
-        const countMultiple = chunks.length >= 2;
+        
+        // Gemini 768-dim embeddings often cluster closer together; 
+        // 0.10+ is typically strong project-specific context.
+        const hasHigh = chunks.some(c => c.similarity >= 0.10);
+        const hasMedium = chunks.some(c => c.similarity >= 0.03);
 
-        if (countMultiple && allHigh) return 'HIGH';
-        if (chunks.some(c => c.similarity >= 0.08)) return 'MEDIUM';
+        if (hasHigh) return 'HIGH';
+        if (hasMedium) return 'MEDIUM';
         return 'LOW';
+    }
+
+    /**
+     * Synthesize a helpful response from context chunks when LLM is unavailable.
+     */
+    private generateOfflineAnswer(query: string, chunks: QueryResult[]): string {
+        const topChunks = chunks.slice(0, 3);
+        let summary = "I'm having trouble connecting to my central brain right now, but I've found some relevant information in the project documents:\n\n";
+        
+        topChunks.forEach((chunk, i) => {
+            // Take the first 300 characters of each chunk
+            let text = chunk.chunk_text.trim();
+            if (text.length > 300) text = text.substring(0, 300) + "...";
+            summary += `• ${text}\n\n`;
+        });
+
+        summary += "\nPlease try again in a few moments once my AI services have recovered!";
+        return summary;
     }
 }

@@ -11,10 +11,16 @@ IF "%SUPABASE_JWT_SECRET%"=="" (
 REM Start Backend
 start "Neesh AI Backend" cmd /k "mvn spring-boot:run"
 
+REM Start AI Service
+cd ai-service
+start "Neesh AI Service" cmd /k "npm run dev"
+cd ..
+
 REM Start Frontend
 cd frontend
 start "Neesh AI Frontend" cmd /k "npm run dev"
 
 echo Services starting...
-echo Backend: http://localhost:8080
-echo Frontend: http://localhost:3000
+echo AI Service: http://localhost:3000
+echo Backend: http://localhost:8081
+echo Frontend: http://localhost:7000

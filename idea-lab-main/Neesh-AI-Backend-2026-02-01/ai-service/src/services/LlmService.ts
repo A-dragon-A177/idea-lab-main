@@ -16,14 +16,30 @@ export class LlmService {
     // Fallback config from env (used if user hasn't configured a key)
     private fallbackApiKey: string | null;
     private fallbackModel: string;
+    private fallbackProvider: string;
+
+    // Mutex queue to serialize Gemini calls and avoid concurrent rate-limit hits
+    private geminiQueue: Promise<void> = Promise.resolve();
 
     constructor() {
-        this.fallbackApiKey = process.env.OPENROUTER_API_KEY || null;
-        this.fallbackModel = process.env.OPENROUTER_MODEL || 'meta-llama/llama-3-8b-instruct:free';
-        if (this.fallbackApiKey) {
-            console.log(`[LlmService] Initialized with OpenRouter fallback model: ${this.fallbackModel}`);
+        this.fallbackProvider = (process.env.DEFAULT_LLM_PROVIDER || 'OPENROUTER').toUpperCase();
+
+        if (this.fallbackProvider === 'GEMINI') {
+            this.fallbackApiKey = process.env.GEMINI_API_KEY || null;
+            this.fallbackModel = 'gemini-flash-latest';
+            if (this.fallbackApiKey) {
+                console.log(`[LlmService] Initialized with Gemini fallback model: ${this.fallbackModel}`);
+            } else {
+                console.log('[LlmService] DEFAULT_LLM_PROVIDER is GEMINI but no GEMINI_API_KEY set');
+            }
         } else {
-            console.log('[LlmService] No fallback OPENROUTER_API_KEY set — user must provide their own key');
+            this.fallbackApiKey = process.env.OPENROUTER_API_KEY || null;
+            this.fallbackModel = process.env.OPENROUTER_MODEL || 'meta-llama/llama-3-8b-instruct:free';
+            if (this.fallbackApiKey) {
+                console.log(`[LlmService] Initialized with OpenRouter fallback model: ${this.fallbackModel}`);
+            } else {
+                console.log('[LlmService] No fallback OPENROUTER_API_KEY set — user must provide their own key');
+            }
         }
     }
 
@@ -35,7 +51,7 @@ export class LlmService {
             return { provider: provider.toUpperCase() as LlmProvider, apiKey };
         }
         if (this.fallbackApiKey) {
-            return { provider: 'OPENROUTER', apiKey: this.fallbackApiKey };
+            return { provider: this.fallbackProvider as LlmProvider, apiKey: this.fallbackApiKey };
         }
         throw new Error('No LLM API key configured. Please add your API key in Settings.');
     }
@@ -119,7 +135,7 @@ export class LlmService {
             { role: 'user', content: query }
         ];
 
-        const text = await this.callProvider(config, messages, 100, 0.7);
+        const text = await this.callProviderWithFallback(config, messages, 100, 0.7);
 
         return {
             answer: text.trim() || "Hello! 👋 I'm here to help you with questions about this project. Ask me anything!",
@@ -151,27 +167,63 @@ export class LlmService {
                 { role: 'user', content: userPrompt }
             ];
 
-            let text = await this.callProvider(config, messages, 800, 0);
+            let text = await this.callProviderWithFallback(config, messages, 800, 0);
 
-            // Retry once if empty response
+            // Final fallback if totally empty
             if (!text.trim()) {
-                console.warn('[LlmService] Empty response from LLM, retrying once...');
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                text = await this.callProvider(config, messages, 800, 0);
+                console.warn('[LlmService] Both providers failed or empty, returning fallback string');
+                return { 
+                    answer: "I couldn't generate a specific answer right now. Could you please try rephrasing your question?", 
+                    confidence: 'LOW' 
+                };
             }
 
-            console.log(`[LlmService] Generated response, length: ${text.length}`);
+            console.log(`[LlmService] Generated response successfully, length: ${text.length}`);
 
             let confidence: 'HIGH' | 'MEDIUM' | 'LOW' = contextChunks.length > 0 ? 'HIGH' : 'MEDIUM';
-            if (!text.trim()) {
-                confidence = 'LOW';
-            }
-
             return { answer: text.trim(), confidence };
 
         } catch (error: any) {
             console.error("[LlmService] LLM Generation Error:", error.message || error);
-            throw error; // Re-throw to preserve provider-specific error messages
+            throw error;
+        }
+    }
+
+    /**
+     * Call provider with automatic fallback if the first attempt fails.
+     */
+    private async callProviderWithFallback(config: ProviderConfig, messages: any[], maxTokens: number, temperature: number): Promise<string> {
+        try {
+            // 1. Primary Try
+            console.log(`[LlmService] Attempting primary provider: ${config.provider}`);
+            return await this.callProvider(config, messages, maxTokens, temperature);
+        } catch (error: any) {
+            // Don't fallback on auth errors
+            if (error.message?.includes('Invalid') || error.message?.includes('API key')) {
+                throw error;
+            }
+
+            console.warn(`[LlmService] Primary provider (${config.provider}) failed: ${error.message}. Attempting fallback...`);
+
+            // 2. Fallback Try
+            let fallbackConfig: ProviderConfig | null = null;
+            if (config.provider === 'OPENROUTER' && process.env.GEMINI_API_KEY) {
+                fallbackConfig = { provider: 'GEMINI', apiKey: process.env.GEMINI_API_KEY };
+            } else if (config.provider === 'GEMINI' && process.env.OPENROUTER_API_KEY) {
+                fallbackConfig = { provider: 'OPENROUTER', apiKey: process.env.OPENROUTER_API_KEY };
+            }
+
+            if (fallbackConfig) {
+                try {
+                    console.log(`[LlmService] Running FALLBACK using ${fallbackConfig.provider}...`);
+                    return await this.callProvider(fallbackConfig, messages, maxTokens, temperature);
+                } catch (fallbackError: any) {
+                    console.error(`[LlmService] Fallback also failed: ${fallbackError.message}`);
+                    throw new Error(`Both primary and fallback LLM providers failed: ${error.message} / ${fallbackError.message}`);
+                }
+            }
+
+            throw error; // Re-throw if no fallback available
         }
     }
 
@@ -179,8 +231,6 @@ export class LlmService {
      * Route to the correct provider's API
      */
     private async callProvider(config: ProviderConfig, messages: any[], maxTokens: number, temperature: number): Promise<string> {
-        console.log(`[LlmService] Calling provider: ${config.provider}`);
-
         switch (config.provider) {
             case 'OPENROUTER':
                 return this.callOpenRouter(config.apiKey, messages, maxTokens, temperature);
@@ -206,6 +256,24 @@ export class LlmService {
         const model = this.fallbackModel;
         console.log(`[LlmService] Sending request to OpenRouter (${model})...`);
 
+        // Convert system messages to user messages to support models like Gemma that don't allow system instructions
+        const processedMessages = [];
+        let systemPrompt = '';
+        for (const msg of messages) {
+            if (msg.role === 'system') {
+                systemPrompt += msg.content + '\n\n';
+            } else if (msg.role === 'user') {
+                if (systemPrompt) {
+                    processedMessages.push({ role: 'user', content: systemPrompt + msg.content });
+                    systemPrompt = '';
+                } else {
+                    processedMessages.push(msg);
+                }
+            } else {
+                processedMessages.push(msg);
+            }
+        }
+
         const maxRetries = 3;
         let lastError = '';
         let data: any = null;
@@ -221,7 +289,7 @@ export class LlmService {
                 },
                 body: JSON.stringify({
                     model,
-                    messages,
+                    messages: processedMessages,
                     max_tokens: maxTokens,
                     temperature,
                     seed: 42,
@@ -368,10 +436,27 @@ export class LlmService {
     }
 
     /**
-     * Google Gemini API
+     * Google Gemini API — serialized through a mutex queue to prevent concurrent rate-limit failures.
      */
     private async callGemini(apiKey: string, messages: any[], maxTokens: number, temperature: number): Promise<string> {
-        const model = 'gemini-2.0-flash';
+        // Enqueue: wait for any previous Gemini call to finish before starting ours
+        return new Promise<string>((resolve, reject) => {
+            this.geminiQueue = this.geminiQueue.then(async () => {
+                try {
+                    const result = await this._callGeminiInternal(apiKey, messages, maxTokens, temperature);
+                    resolve(result);
+                } catch (err) {
+                    reject(err);
+                }
+            });
+        });
+    }
+
+    /**
+     * Internal Gemini API call with retry logic.
+     */
+    private async _callGeminiInternal(apiKey: string, messages: any[], maxTokens: number, temperature: number): Promise<string> {
+        const model = 'gemini-flash-latest';
         console.log(`[LlmService] Sending request to Google Gemini (${model})...`);
 
         // Gemini uses a different format: contents array with parts
@@ -385,37 +470,70 @@ export class LlmService {
 
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                contents: geminiContents,
-                systemInstruction: systemMessage ? { parts: [{ text: systemMessage }] } : undefined,
-                generationConfig: {
-                    maxOutputTokens: maxTokens,
-                    temperature,
-                }
-            })
-        });
+        const maxRetries = 5;
+        let lastError = '';
+        let data: any = null;
 
-        if (!response.ok) {
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    contents: geminiContents,
+                    systemInstruction: systemMessage ? { parts: [{ text: systemMessage }] } : undefined,
+                    generationConfig: {
+                        maxOutputTokens: maxTokens,
+                        temperature,
+                    }
+                })
+            });
+
+            if (response.ok) {
+                data = await response.json();
+                console.log(`[LlmService] Gemini responded successfully on attempt ${attempt}`);
+                break;
+            }
+
             const errorBody = await response.text();
+            lastError = errorBody;
+            console.error(`[LlmService] Gemini API error (${response.status}) attempt ${attempt}: ${errorBody}`);
+
             if (response.status === 400 && errorBody.includes('API_KEY_INVALID')) {
                 throw new Error('Invalid Gemini API key. Please check your key in Settings.');
             }
             if (response.status === 403) {
                 throw new Error('Gemini API key does not have permission. Please check your API key and enable the Generative Language API.');
             }
-            if (response.status === 429) {
-                throw new Error('Gemini rate limit exceeded. Please try again later.');
+            if (response.status === 429 && attempt < maxRetries) {
+                // Parse server-suggested retry delay if available
+                let waitMs = attempt * 5000; // default: 5s, 10s, 15s, 20s
+                try {
+                    const errJson = JSON.parse(errorBody);
+                    const retryInfo = errJson?.error?.details?.find((d: any) => d['@type']?.includes('RetryInfo'));
+                    if (retryInfo?.retryDelay) {
+                        const serverDelaySec = parseInt(retryInfo.retryDelay);
+                        if (!isNaN(serverDelaySec) && serverDelaySec > 0) {
+                            waitMs = Math.min(serverDelaySec * 1000, 60000); // cap at 60s
+                        }
+                    }
+                } catch { /* ignore parse errors, use default delay */ }
+                console.warn(`[LlmService] Gemini rate limited (429), retrying in ${waitMs}ms (attempt ${attempt}/${maxRetries})...`);
+                await new Promise(resolve => setTimeout(resolve, waitMs));
+                continue;
             }
-            console.error(`[LlmService] Gemini API error (${response.status}): ${errorBody}`);
+            if (response.status === 429) {
+                throw new Error('Gemini rate limit exceeded after retries. Please try again later.');
+            }
+
             throw new Error(`Gemini API error (${response.status}): ${errorBody}`);
         }
 
-        const data = await response.json();
+        if (!data) {
+            throw new Error(`Gemini API failed after ${maxRetries} retries: ${lastError}`);
+        }
+
         // Gemini response format: { candidates: [{ content: { parts: [{ text: '...' }] } }] }
         const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
         console.log(`[LlmService] Gemini responded successfully`);

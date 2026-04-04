@@ -47,4 +47,10 @@ public interface BlogPromotionRepository extends JpaRepository<BlogPromotion, UU
         LIMIT :maxResults
         """, nativeQuery = true)
     List<BlogPromotion> findSimilarPromotions(@Param("promotionId") UUID promotionId, @Param("maxResults") int maxResults);
+
+    @Query(value = "SELECT * FROM blog_promotions WHERE status = 'ACTIVE' AND id NOT IN (:excludeIds) ORDER BY RANDOM() LIMIT :maxResults", nativeQuery = true)
+    List<BlogPromotion> findRandomActivePromotionsExcluding(@Param("excludeIds") List<UUID> excludeIds, @Param("maxResults") int maxResults);
+
+    @Query(value = "SELECT * FROM blog_promotions WHERE status = 'ACTIVE' ORDER BY RANDOM() LIMIT :maxResults", nativeQuery = true)
+    List<BlogPromotion> findRandomActivePromotions(@Param("maxResults") int maxResults);
 }

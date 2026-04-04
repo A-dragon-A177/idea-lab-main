@@ -1,0 +1,415 @@
+[EmbeddingService] Initialized with Gemini embedding model: gemini-embedding-2-preview
+[EmbeddingService] Initialized with Gemini embedding model: gemini-embedding-2-preview
+[EmbeddingService] Initialized with Gemini embedding model: gemini-embedding-2-preview
+[LlmService] Initialized with Gemini fallback model: gemini-2.0-flash
+[EmbeddingService] Initialized with Gemini embedding model: gemini-embedding-2-preview
+[ChatService] Initialized successfully
+[EmbeddingService] Initialized with Gemini embedding model: gemini-embedding-2-preview
+AI Service running on port 3000
+[RagController] chatWithProject called - projectId: 38f36368-abdf-4f4e-9013-811b6f707dff, query: "tell me about this project", linkedProjects: 0, provider: fallback, userName: N/A, userEmail: N/A
+[RagController] Calling ChatService.askQuestion...
+[ChatService] askQuestion called - projectId: 38f36368-abdf-4f4e-9013-811b6f707dff, query: "tell me about this project", linkedProjects: 0, provider: fallback, userName: N/A, userEmail: N/A
+[ChatService] Question logged with ID: d6061b54-5e37-4e0a-a364-a6b0ee1510de
+[ChatService] Generating query embedding...
+[ChatService] Embedding generated, dimensions: 768
+[VectorStoreService] Keyword search with terms: project
+[VectorStoreService] Hybrid: 5 vector + 5 keyword results
+[ChatService] Hybrid search returned 5 chunks
+[ChatService] Using 5 context chunks for RAG generation
+[LlmService] generateAnswer called - query: "tell me about this project", chunks: 5
+[LlmService] Using RAG mode with context
+[LlmService] Attempting primary provider: GEMINI
+[LlmService] Sending request to Google Gemini (gemini-2.0-flash)...
+node.exe : [LlmService] 
+Gemini API error (429) 
+attempt 1: {
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~
+    + CategoryInfo         
+     : NotSpecified: ([Ll  
+  mService] Ge...9) atte   
+ mpt 1: {:String) [], R    
+emoteException
+    + FullyQualifiedErrorI 
+   d : NativeCommandError
+ 
+  "error": {
+    "code": 429,
+    "message": "You 
+exceeded your current 
+quota, please check your 
+plan and billing details. 
+For more information on 
+this error, head to: https:
+//ai.google.dev/gemini-api/
+docs/rate-limits. To 
+monitor your current 
+usage, head to: 
+https://ai.dev/rate-limit. 
+\n* Quota exceeded for 
+metric: generativelanguage.
+googleapis.com/generate_con
+tent_free_tier_input_token_
+count, limit: 0, model: 
+gemini-2.0-flash\n* Quota 
+exceeded for metric: genera
+tivelanguage.googleapis.com
+/generate_content_free_tier
+_requests, limit: 0, 
+model: gemini-2.0-flash\n* 
+Quota exceeded for metric: 
+generativelanguage.googleap
+is.com/generate_content_fre
+e_tier_requests, limit: 0, 
+model: 
+gemini-2.0-flash\nPlease 
+retry in 33.111840444s.",
+    "status": 
+"RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.goog
+leapis.com/google.rpc.Help"
+,
+        "links": [
+          {
+            "description": 
+"Learn more about Gemini 
+API quotas",
+            "url": "https:/
+/ai.google.dev/gemini-api/d
+ocs/rate-limits"
+          }
+        ]
+      },
+      {
+        "@type": "type.goog
+leapis.com/google.rpc.Quota
+Failure",
+        "violations": [
+          {
+            "quotaMetric": 
+"generativelanguage.googlea
+pis.com/generate_content_fr
+ee_tier_input_token_count",
+            "quotaId": "Gen
+erateContentInputTokensPerM
+odelPerMinute-FreeTier",
+            
+"quotaDimensions": {
+              "location": 
+"global",
+              "model": 
+"gemini-2.0-flash"
+            }
+          },
+          {
+            "quotaMetric": 
+"generativelanguage.googlea
+pis.com/generate_content_fr
+ee_tier_requests",
+            "quotaId": "Gen
+erateRequestsPerMinutePerPr
+ojectPerModel-FreeTier",
+            
+"quotaDimensions": {
+              "model": 
+"gemini-2.0-flash",
+              "location": 
+"global"
+            }
+          },
+          {
+            "quotaMetric": 
+"generativelanguage.googlea
+pis.com/generate_content_fr
+ee_tier_requests",
+            "quotaId": "Gen
+erateRequestsPerDayPerProje
+ctPerModel-FreeTier",
+            
+"quotaDimensions": {
+              "model": 
+"gemini-2.0-flash",
+              "location": 
+"global"
+            }
+          }
+        ]
+      },
+      {
+        "@type": "type.goog
+leapis.com/google.rpc.Retry
+Info",
+        "retryDelay": "33s"
+      }
+    ]
+  }
+}
+
+[LlmService] Gemini rate 
+limited (429), retrying in 
+3000ms (attempt 1/3)...
+[LlmService] Gemini API 
+error (429) attempt 2: {
+  "error": {
+    "code": 429,
+    "message": "You 
+exceeded your current 
+quota, please check your 
+plan and billing details. 
+For more information on 
+this error, head to: https:
+//ai.google.dev/gemini-api/
+docs/rate-limits. To 
+monitor your current 
+usage, head to: 
+https://ai.dev/rate-limit. 
+\n* Quota exceeded for 
+metric: generativelanguage.
+googleapis.com/generate_con
+tent_free_tier_requests, 
+limit: 0, model: 
+gemini-2.0-flash\n* Quota 
+exceeded for metric: genera
+tivelanguage.googleapis.com
+/generate_content_free_tier
+_requests, limit: 0, 
+model: gemini-2.0-flash\n* 
+Quota exceeded for metric: 
+generativelanguage.googleap
+is.com/generate_content_fre
+e_tier_input_token_count, 
+limit: 0, model: 
+gemini-2.0-flash\nPlease 
+retry in 29.961104381s.",
+    "status": 
+"RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.goog
+leapis.com/google.rpc.Help"
+,
+        "links": [
+          {
+            "description": 
+"Learn more about Gemini 
+API quotas",
+            "url": "https:/
+/ai.google.dev/gemini-api/d
+ocs/rate-limits"
+          }
+        ]
+      },
+      {
+        "@type": "type.goog
+leapis.com/google.rpc.Quota
+Failure",
+        "violations": [
+          {
+            "quotaMetric": 
+"generativelanguage.googlea
+pis.com/generate_content_fr
+ee_tier_requests",
+            "quotaId": "Gen
+erateRequestsPerDayPerProje
+ctPerModel-FreeTier",
+            
+"quotaDimensions": {
+              "model": 
+"gemini-2.0-flash",
+              "location": 
+"global"
+            }
+          },
+          {
+            "quotaMetric": 
+"generativelanguage.googlea
+pis.com/generate_content_fr
+ee_tier_requests",
+            "quotaId": "Gen
+erateRequestsPerMinutePerPr
+ojectPerModel-FreeTier",
+            
+"quotaDimensions": {
+              "location": 
+"global",
+              "model": 
+"gemini-2.0-flash"
+            }
+          },
+          {
+            "quotaMetric": 
+"generativelanguage.googlea
+pis.com/generate_content_fr
+ee_tier_input_token_count",
+            "quotaId": "Gen
+erateContentInputTokensPerM
+odelPerMinute-FreeTier",
+            
+"quotaDimensions": {
+              "model": 
+"gemini-2.0-flash",
+              "location": 
+"global"
+            }
+          }
+        ]
+      },
+      {
+        "@type": "type.goog
+leapis.com/google.rpc.Retry
+Info",
+        "retryDelay": "29s"
+      }
+    ]
+  }
+}
+
+[LlmService] Gemini rate 
+limited (429), retrying in 
+6000ms (attempt 2/3)...
+[LlmService] Gemini API 
+error (429) attempt 3: {
+  "error": {
+    "code": 429,
+    "message": "You 
+exceeded your current 
+quota, please check your 
+plan and billing details. 
+For more information on 
+this error, head to: https:
+//ai.google.dev/gemini-api/
+docs/rate-limits. To 
+monitor your current 
+usage, head to: 
+https://ai.dev/rate-limit. 
+\n* Quota exceeded for 
+metric: generativelanguage.
+googleapis.com/generate_con
+tent_free_tier_input_token_
+count, limit: 0, model: 
+gemini-2.0-flash\n* Quota 
+exceeded for metric: genera
+tivelanguage.googleapis.com
+/generate_content_free_tier
+_requests, limit: 0, 
+model: gemini-2.0-flash\n* 
+Quota exceeded for metric: 
+generativelanguage.googleap
+is.com/generate_content_fre
+e_tier_requests, limit: 0, 
+model: 
+gemini-2.0-flash\nPlease 
+retry in 23.525488311s.",
+    "status": 
+"RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.goog
+leapis.com/google.rpc.Help"
+,
+        "links": [
+          {
+            "description": 
+"Learn more about Gemini 
+API quotas",
+            "url": "https:/
+/ai.google.dev/gemini-api/d
+ocs/rate-limits"
+          }
+        ]
+      },
+      {
+        "@type": "type.goog
+leapis.com/google.rpc.Quota
+Failure",
+        "violations": [
+          {
+            "quotaMetric": 
+"generativelanguage.googlea
+pis.com/generate_content_fr
+ee_tier_input_token_count",
+            "quotaId": "Gen
+erateContentInputTokensPerM
+odelPerMinute-FreeTier",
+            
+"quotaDimensions": {
+              "model": 
+"gemini-2.0-flash",
+              "location": 
+"global"
+            }
+          },
+          {
+            "quotaMetric": 
+"generativelanguage.googlea
+pis.com/generate_content_fr
+ee_tier_requests",
+            "quotaId": "Gen
+erateRequestsPerMinutePerPr
+ojectPerModel-FreeTier",
+            
+"quotaDimensions": {
+              "location": 
+"global",
+              "model": 
+"gemini-2.0-flash"
+            }
+          },
+          {
+            "quotaMetric": 
+"generativelanguage.googlea
+pis.com/generate_content_fr
+ee_tier_requests",
+            "quotaId": "Gen
+erateRequestsPerDayPerProje
+ctPerModel-FreeTier",
+            
+"quotaDimensions": {
+              "model": 
+"gemini-2.0-flash",
+              "location": 
+"global"
+            }
+          }
+        ]
+      },
+      {
+        "@type": "type.goog
+leapis.com/google.rpc.Retry
+Info",
+        "retryDelay": "23s"
+      }
+    ]
+  }
+}
+
+[LlmService] Primary 
+provider (GEMINI) failed: 
+Gemini rate limit exceeded 
+after retries. Please try 
+again later.. Attempting 
+fallback...
+[LlmService] LLM 
+Generation Error: Gemini 
+rate limit exceeded after 
+retries. Please try again 
+later.
+[ChatService] LLM 
+generation failed: Gemini 
+rate limit exceeded after 
+retries. Please try again 
+later.
+[ChatService] Entering EMERGENCY OFFLINE MODE (LLM failed but context available)
+[ChatService] Answer logged with ID: de51936a-fdca-4d6b-be75-da5f04cf0883
+[ChatService] Reporting unanswered question to backend: http://localhost:8081/api/public/projects/38f36368-abdf-4f4e-9013-811b6f707dff/questions/report (userName: N/A, userEmail: N/A)
+[ChatService] Response ready - confidence: LOW, answer length: 888
+[RagController] ChatService responded in 11943ms - confidence: LOW
+[ChatService] Unanswered question reported successfully

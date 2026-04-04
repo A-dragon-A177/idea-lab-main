@@ -1023,11 +1023,11 @@ const Project = () => {
                         className="hidden"
                       />
                       {section.imageUrl ? (
-                        <div className="relative rounded-xl overflow-hidden group">
+                        <div className="relative rounded-xl overflow-hidden group bg-muted/10 flex justify-center">
                           <img
                             src={section.imageUrl}
                             alt={section.title}
-                            className="w-full h-[200px] object-cover"
+                            className="max-w-full h-auto max-h-[400px] object-contain rounded-xl"
                           />
                           <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
                             <label
@@ -1071,12 +1071,12 @@ const Project = () => {
                         className="hidden"
                       />
                       {section.videoUrl ? (
-                        <div className="relative rounded-xl overflow-hidden group">
+                        <div className="relative rounded-xl overflow-hidden group bg-black flex justify-center">
                           <video
                             src={section.videoUrl}
                             controls
                             preload="metadata"
-                            className="w-full max-h-[400px] rounded-xl bg-black"
+                            className="max-w-full h-auto max-h-[500px] object-contain rounded-xl"
                           />
                           <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2">
                             <label

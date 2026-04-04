@@ -57,6 +57,7 @@ import {
   Megaphone,
   Lock,
   Trash2,
+  PartyPopper,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useProjects, type Project } from "@/hooks/useProjects";
@@ -66,6 +67,7 @@ import { usePromotions } from "@/hooks/usePromotions";
 import { usePaymentVerification } from "@/hooks/usePayments";
 import { toast } from "sonner";
 import { NeeshLogo } from "@/components/NeeshLogo";
+import { BetaBadge } from "@/components/BetaBadge";
 import { generateShareableUrl } from "@/lib/slugify";
 import apiClient from "@/lib/api";
 
@@ -122,6 +124,8 @@ const Dashboard = () => {
   const { verifying } = usePaymentVerification();
   const [helpOpen, setHelpOpen] = useState(false);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [betaUpgradeSuccess, setBetaUpgradeSuccess] = useState(false);
+  const [isUpgrading, setIsUpgrading] = useState(false);
   const [promoteOpen, setPromoteOpen] = useState(false);
   const [promoteProjectId, setPromoteProjectId] = useState<string | null>(null);
   const [promoteTags, setPromoteTags] = useState<string[]>([]);
@@ -216,9 +220,17 @@ const Dashboard = () => {
     }
   };
 
-  const handleUpgrade = () => {
-    navigate("/pricing");
-    setUpgradeOpen(false);
+  const handleUpgrade = async () => {
+    setIsUpgrading(true);
+    const success = await upgradeToPro();
+    setIsUpgrading(false);
+    if (success) {
+      setUpgradeOpen(false);
+      setBetaUpgradeSuccess(true);
+      refetchSubscription();
+    } else {
+      toast.error("Failed to upgrade. Please try again.");
+    }
   };
 
   const handlePromoteBlog = async () => {
@@ -321,6 +333,7 @@ const Dashboard = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <NeeshLogo size="md" />
+              <BetaBadge variant="glow" type="beta" />
               <span className="text-sm text-muted-foreground hidden sm:block">
                 AI-powered content & niche projects
               </span>
@@ -381,9 +394,7 @@ const Dashboard = () => {
                   }}>
                     <Plus className="w-4 h-4" />
                     New Project
-                    {isFree && subscription && (
-                      <span className="ml-1 text-xs opacity-70">({projects.length}/5)</span>
-                    )}
+                    <BetaBadge variant="static" type="beta" className="ml-1.5" />
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-lg">
@@ -482,7 +493,7 @@ const Dashboard = () => {
         </div>
       </header>
 
-      {/* Upgrade Modal */}
+      {/* Upgrade Modal — Beta instant upgrade */}
       <Dialog open={upgradeOpen} onOpenChange={setUpgradeOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -491,12 +502,15 @@ const Dashboard = () => {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-2">
-            <div className="p-4 rounded-xl bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-red-500/10 border border-blue-500/20">
-              <p className="text-sm text-foreground font-medium mb-2">
-                You've reached the free plan limit of 5 projects.
-              </p>
+            <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-600/10 via-green-600/10 to-teal-500/10 border border-emerald-500/20">
+              <div className="flex items-center gap-2 mb-2">
+                <BetaBadge variant="glow" type="beta" />
+                <p className="text-sm text-foreground font-medium">
+                  Free during Beta!
+                </p>
+              </div>
               <p className="text-xs text-muted-foreground">
-                Upgrade to Pro for <span className="font-bold text-foreground">$9.99/month</span> and unlock:
+                Since Neesh AI is in Beta, all Pro features are completely free. Upgrade now to unlock:
               </p>
               <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
                 <li className="flex items-center gap-2"><span className="text-green-500">✓</span> Unlimited projects</li>
@@ -509,10 +523,35 @@ const Dashboard = () => {
               <Button variant="outline" onClick={() => setUpgradeOpen(false)} className="flex-1">
                 Maybe Later
               </Button>
-              <Button onClick={handleUpgrade} className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white">
-                Upgrade Now ⚡
+              <Button onClick={handleUpgrade} disabled={isUpgrading} className="flex-1 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white">
+                {isUpgrading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Upgrade Free ⚡
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Beta Upgrade Success Modal */}
+      <Dialog open={betaUpgradeSuccess} onOpenChange={setBetaUpgradeSuccess}>
+        <DialogContent className="sm:max-w-md">
+          <div className="flex flex-col items-center text-center py-4">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-500/20 to-green-500/20 flex items-center justify-center mb-4">
+              <PartyPopper className="w-8 h-8 text-emerald-500" />
+            </div>
+            <h2 className="font-display text-2xl font-bold text-foreground mb-2">
+              🎉 Welcome to Pro!
+            </h2>
+            <BetaBadge variant="glow" type="beta" className="mb-3" />
+            <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">
+              Since Neesh AI is currently in <strong className="text-foreground">Beta</strong>, the Pro plan is free for you! Enjoy unlimited projects, custom branding, cross-promotion, and all premium features.
+            </p>
+            <Button
+              onClick={() => setBetaUpgradeSuccess(false)}
+              className="mt-6 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white px-8"
+            >
+              Let's Go! 🚀
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -849,11 +888,13 @@ const Dashboard = () => {
                   <Lock className="w-7 h-7 text-muted-foreground" />
                 </div>
                 <h3 className="font-semibold text-lg text-foreground mb-1">Pro Feature</h3>
+                <BetaBadge variant="glow" type="beta" className="mb-2" />
                 <p className="text-sm text-muted-foreground mb-4 max-w-sm text-center">
-                  Upgrade to Pro ($9.99/month) to promote your blogs across the Neesh AI network.
+                  Free during Beta! Upgrade to Pro to promote your blogs across the Neesh AI network.
                 </p>
-                <Button onClick={handleUpgrade} className="gap-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white">
-                  Upgrade to Pro ⚡
+                <Button onClick={() => setUpgradeOpen(true)} disabled={isUpgrading} className="gap-1.5 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white">
+                  {isUpgrading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                  Upgrade Free ⚡
                 </Button>
               </div>
 

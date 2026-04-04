@@ -1,0 +1,91 @@
+[EmbeddingService] Initialized with Gemini embedding model: gemini-embedding-2-preview
+[EmbeddingService] Initialized with Gemini embedding model: gemini-embedding-2-preview
+[EmbeddingService] Initialized with Gemini embedding model: gemini-embedding-2-preview
+[LlmService] Initialized with Gemini fallback model: gemini-flash-latest
+[EmbeddingService] Initialized with Gemini embedding model: gemini-embedding-2-preview
+[ChatService] Initialized successfully
+[EmbeddingService] Initialized with Gemini embedding model: gemini-embedding-2-preview
+AI Service running on port 3000
+[RagController] chatWithProject called - projectId: 38f36368-abdf-4f4e-9013-811b6f707dff, query: "tell me about this project", linkedProjects: 0, provider: fallback, userName: N/A, userEmail: N/A
+[RagController] Calling ChatService.askQuestion...
+[ChatService] askQuestion called - projectId: 38f36368-abdf-4f4e-9013-811b6f707dff, query: "tell me about this project", linkedProjects: 0, provider: fallback, userName: N/A, userEmail: N/A
+[ChatService] Question logged with ID: d6061b54-5e37-4e0a-a364-a6b0ee1510de
+[ChatService] Generating query embedding...
+[ChatService] Embedding generated, dimensions: 768
+[VectorStoreService] Keyword search with terms: project
+[VectorStoreService] Hybrid: 5 vector + 5 keyword results
+[ChatService] Hybrid search returned 5 chunks
+[ChatService] Using 5 context chunks for RAG generation
+[LlmService] generateAnswer called - query: "tell me about this project", chunks: 5
+[LlmService] Using RAG mode with context
+[LlmService] Attempting primary provider: GEMINI
+[LlmService] Sending request to Google Gemini (gemini-flash-latest)...
+[LlmService] Gemini responded successfully on attempt 1
+[LlmService] Gemini responded successfully
+[LlmService] Generated response successfully, length: 799
+[ChatService] RAG response generated, confidence: HIGH
+[ChatService] Answer logged with ID: 959ba6d6-455f-4b4a-920c-5a4e2011b01b
+[ChatService] Response ready - confidence: HIGH, answer length: 799
+[RagController] ChatService responded in 48036ms - confidence: HIGH
+[RagController] chatWithProject called - projectId: 38f36368-abdf-4f4e-9013-811b6f707dff, query: "Explain this product ", linkedProjects: 0, provider: GEMINI, userName: N/A, userEmail: N/A
+[RagController] Calling ChatService.askQuestion...
+[ChatService] askQuestion called - projectId: 38f36368-abdf-4f4e-9013-811b6f707dff, query: "Explain this product ", linkedProjects: 0, provider: GEMINI, userName: N/A, userEmail: N/A
+[ChatService] Question logged with ID: 1a23bb18-ef7a-411f-8689-834702ed035d
+[ChatService] Generating query embedding...
+[ChatService] Embedding generated, dimensions: 768
+[VectorStoreService] Keyword search with terms: explain, product
+[VectorStoreService] Hybrid: 5 vector + 1 keyword results
+[ChatService] Hybrid search returned 5 chunks
+[ChatService] Using 5 context chunks for RAG generation
+[LlmService] generateAnswer called - query: "Explain this product ", chunks: 5
+[LlmService] Using RAG mode with context
+[LlmService] Attempting primary provider: GEMINI
+[LlmService] Sending request to Google Gemini (gemini-flash-latest)...
+[LlmService] Gemini responded successfully on attempt 1
+[LlmService] Gemini responded successfully
+[LlmService] Generated response successfully, length: 114
+[ChatService] RAG response generated, confidence: HIGH
+[ChatService] Answer logged with ID: aa806c94-a751-4df4-90f1-089f3ed39be0
+[ChatService] Response ready - confidence: HIGH, answer length: 114
+[RagController] ChatService responded in 28299ms - confidence: HIGH
+[RagController] chatWithProject called - projectId: 38f36368-abdf-4f4e-9013-811b6f707dff, query: "Explain in detail about Neesh AI ", linkedProjects: 0, provider: GEMINI, userName: N/A, userEmail: N/A
+[RagController] Calling ChatService.askQuestion...
+[ChatService] askQuestion called - projectId: 38f36368-abdf-4f4e-9013-811b6f707dff, query: "Explain in detail about Neesh AI ", linkedProjects: 0, provider: GEMINI, userName: N/A, userEmail: N/A
+[ChatService] Question logged with ID: b4e7d4ab-841f-48b6-8399-b4ea91acf464
+[ChatService] Generating query embedding...
+[ChatService] Embedding generated, dimensions: 768
+[VectorStoreService] Keyword search with terms: explain, detail, neesh
+[VectorStoreService] Hybrid: 5 vector + 3 keyword results
+[ChatService] Hybrid search returned 5 chunks
+[ChatService] Using 5 context chunks for RAG generation
+[LlmService] generateAnswer called - query: "Explain in detail about Neesh AI ", chunks: 5
+[LlmService] Using RAG mode with context
+[LlmService] Attempting primary provider: GEMINI
+[LlmService] Sending request to Google Gemini (gemini-flash-latest)...
+[RagController] chatWithProject called - projectId: 38f36368-abdf-4f4e-9013-811b6f707dff, query: "Explain in simple terms", linkedProjects: 0, provider: fallback, userName: N/A, userEmail: N/A
+[RagController] Calling ChatService.askQuestion...
+[ChatService] askQuestion called - projectId: 38f36368-abdf-4f4e-9013-811b6f707dff, query: "Explain in simple terms", linkedProjects: 0, provider: fallback, userName: N/A, userEmail: N/A
+[ChatService] Question logged with ID: 228684b6-40a3-4f08-8a28-001424c0af01
+[ChatService] Generating query embedding...
+[ChatService] Embedding generated, dimensions: 768
+[VectorStoreService] Keyword search with terms: explain, simple, terms
+[VectorStoreService] Hybrid: 5 vector + 0 keyword results
+[ChatService] Hybrid search returned 5 chunks
+[ChatService] Using 5 context chunks for RAG generation
+[LlmService] generateAnswer called - query: "Explain in simple terms", chunks: 5
+[LlmService] Using RAG mode with context
+[LlmService] Attempting primary provider: GEMINI
+[LlmService] Sending request to Google Gemini (gemini-flash-latest)...
+[ChatService] Entering EMERGENCY OFFLINE MODE (LLM failed but context available)
+[ChatService] Answer logged with ID: 3fc03b59-1d7e-46d6-894e-aee7451c1135
+[ChatService] Reporting unanswered question to backend: http://localhost:8081/api/public/projects/38f36368-abdf-4f4e-9013-811b6f707dff/questions/report (userName: N/A, userEmail: N/A)
+[ChatService] Response ready - confidence: LOW, answer length: 1120
+[RagController] ChatService responded in 22311ms - confidence: LOW
+[ChatService] Unanswered question reported successfully
+[LlmService] Gemini responded successfully on attempt 1
+[LlmService] Gemini responded successfully
+[LlmService] Generated response successfully, length: 979
+[ChatService] RAG response generated, confidence: HIGH
+[ChatService] Answer logged with ID: 2ff3132d-64de-42b1-bc6d-c332e1e1ab27
+[ChatService] Response ready - confidence: HIGH, answer length: 979
+[RagController] ChatService responded in 25698ms - confidence: HIGH

@@ -38,6 +38,6 @@ app.get('/internal/projects/:projectId/readiness', (req, res) => insightControll
 app.get('/internal/projects/:projectId/risks', (req, res) => insightController.getRisks(req, res));
 
 
-app.listen(port, () => {
+app.listen(port as number, "127.0.0.1", () => {
     console.log(`AI Service running on port ${port}`);
 });

@@ -18,6 +18,10 @@ for /f "usebackq tokens=1,* delims==" %%a in (".env") do (
 )
 
 echo.
+echo Starting Neesh AI Service...
+start "Neesh AI Service" cmd /k "cd ai-service && npm run dev"
+
+echo.
 echo Starting Neesh AI Backend...
 echo Backend URL: http://localhost:8081
 echo.

@@ -27,6 +27,22 @@ export class VectorStoreService {
         this.supabase = createClient(sbUrl, sbKey);
     }
 
+    /**
+     * Physically remove all embeddings for a project.
+     * Used during re-ingestion to ensure no stale data remains.
+     */
+    async deleteProjectEmbeddings(projectId: string): Promise<void> {
+        const { error } = await this.supabase
+            .from('project_embeddings')
+            .delete()
+            .eq('project_id', projectId);
+
+        if (error) {
+            throw new Error(`Failed to delete project embeddings: ${error.message}`);
+        }
+        console.log(`[VectorStoreService] Deleted all embeddings for project ${projectId}`);
+    }
+
     async storeVectors(
         projectId: string,
         documentGroupId: string,
@@ -101,13 +117,13 @@ export class VectorStoreService {
         query: string,
         topK: number = 5
     ): Promise<QueryResult[]> {
-        // Extract meaningful keywords (> 3 chars, skip stop words)
-        const STOP_WORDS = new Set(['what', 'is', 'the', 'this', 'how', 'are', 'does', 'for', 'and', 'from', 'that', 'with', 'was', 'its', 'can', 'you', 'your', 'have', 'has', 'will', 'would', 'about', 'which', 'there', 'their', 'they', 'been', 'more', 'also', 'any', 'all', 'when', 'who']);
+        // Extract meaningful keywords (> 2 chars, skip stop words)
+        const STOP_WORDS = new Set(['what', 'is', 'the', 'this', 'how', 'are', 'does', 'for', 'and', 'from', 'that', 'with', 'was', 'its', 'can', 'you', 'your', 'have', 'has', 'will', 'would', 'about', 'which', 'there', 'their', 'they', 'been', 'more', 'also', 'any', 'all', 'when', 'who', 'did', 'not', 'but', 'our', 'were', 'than', 'very', 'just', 'into', 'some', 'could', 'should', 'tell', 'please']);
         const keywords = query
             .toLowerCase()
             .replace(/[^a-z0-9\s]/g, ' ')
             .split(/\s+/)
-            .filter(w => w.length > 3 && !STOP_WORDS.has(w));
+            .filter(w => w.length > 2 && !STOP_WORDS.has(w));
 
         if (keywords.length === 0) return [];
 

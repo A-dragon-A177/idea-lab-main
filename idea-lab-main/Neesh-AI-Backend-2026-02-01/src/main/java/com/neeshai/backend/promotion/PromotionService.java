@@ -139,23 +139,37 @@ public class PromotionService {
         }
 
         Blog blog = blogOpt.get();
+        List<BlogPromotion> promotionsToShow = new ArrayList<>();
+        List<String> tempTags = new ArrayList<>();
 
         // Find the promotion for this blog
         Optional<BlogPromotion> promoOpt = promotionRepository.findByBlogIdAndStatus(blog.getId(), "ACTIVE");
-        if (promoOpt.isEmpty()) {
-            // This blog isn't promoted, but we can still try to show promoted blogs
-            // Return some active promotions as suggestions
-            return Collections.emptyList();
+        
+        if (promoOpt.isPresent()) {
+            tempTags = tagRepository.findByPromotionId(promoOpt.get().getId())
+                    .stream().map(PromotionTag::getTag).collect(Collectors.toList());
+
+            // Find similar promotions by tag overlap
+            List<BlogPromotion> similar = promotionRepository.findSimilarPromotions(promoOpt.get().getId(), limit);
+            promotionsToShow.addAll(similar);
+            
+            if (promotionsToShow.size() < limit) {
+                int needed = limit - promotionsToShow.size();
+                List<UUID> excludeIds = promotionsToShow.stream()
+                        .map(BlogPromotion::getId)
+                        .collect(Collectors.toList());
+                excludeIds.add(promoOpt.get().getId());
+                
+                List<BlogPromotion> randomFill = promotionRepository.findRandomActivePromotionsExcluding(excludeIds, needed);
+                promotionsToShow.addAll(randomFill);
+            }
+        } else {
+            // This blog isn't promoted, but we should still show active promotions from others
+            promotionsToShow = promotionRepository.findRandomActivePromotions(limit);
         }
 
-        // Find similar promotions by tag overlap
-        List<BlogPromotion> similar = promotionRepository.findSimilarPromotions(promoOpt.get().getId(), limit);
-
-        // Get tags for the current blog's promotion
-        List<String> currentTags = tagRepository.findByPromotionId(promoOpt.get().getId())
-                .stream().map(PromotionTag::getTag).collect(Collectors.toList());
-
-        return similar.stream().map(simPromo -> {
+        final List<String> currentTags = tempTags;
+        return promotionsToShow.stream().map(simPromo -> {
             Blog simBlog = blogRepository.findById(simPromo.getBlogId()).orElse(null);
             if (simBlog == null) return null;
 

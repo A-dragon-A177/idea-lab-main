@@ -23,7 +23,8 @@ export class IngestionService {
     async ingestProject(projectId: string): Promise<void> {
         console.log(`[IngestionService] Starting ingestion for project ${projectId}`);
 
-        // 1. Fetch Active Documents (including extracted text content)
+        // 1. Physically delete existing vectors for a clean slate
+        await this.vectorStore.deleteProjectEmbeddings(projectId);
         const { data: documents, error } = await this.supabase
             .from('documents')
             .select('*')
@@ -82,7 +83,7 @@ export class IngestionService {
 
             } catch (err: any) {
                 console.error(`[IngestionService] Error processing doc ${doc.id} (${doc.original_filename}):`, err.message);
-                // Continue with other docs
+                throw err; // Stop and fail the whole ingestion if a doc fails
             }
         }
 

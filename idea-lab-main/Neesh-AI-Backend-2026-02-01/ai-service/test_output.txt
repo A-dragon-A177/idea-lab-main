@@ -1,0 +1,18 @@
+
+[Test] Trying model: gemini-2.0-flash-lite...
+[Test] Status: 404
+[Test] ??? FAILED: This model models/gemini-2.0-flash-lite is no longer available to new users. Please update your code to use a newer model for the latest features and improvements.
+
+[Test] Trying model: gemini-1.5-flash...
+[Test] Status: 404
+[Test] ??? FAILED: models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+
+[Test] Trying model: gemini-1.5-flash-8b...
+[Test] Status: 404
+[Test] ??? FAILED: models/gemini-1.5-flash-8b is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+
+[Test] Trying model: gemini-2.0-flash...
+[Test] Status: 404
+[Test] ??? FAILED: This model models/gemini-2.0-flash is no longer available to new users. Please update your code to use a newer model for the latest features and improvements.
+
+??? No working model found with this API key.
