@@ -1,3 +1,17 @@
 .vscode/
 target/
 *.class
+
+# Logs & debug output
+*.log
+*.out
+*_log.txt
+boot_log*.txt
+compile*.txt
+startup_log.txt
+output.txt
+run_log.txt
+backend_*.log
+.env
+*.env
+
