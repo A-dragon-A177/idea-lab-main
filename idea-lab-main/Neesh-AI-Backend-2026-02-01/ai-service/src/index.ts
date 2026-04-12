@@ -3,7 +3,9 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 
-dotenv.config();
+if (process.env.NODE_ENV !== 'production') {
+    dotenv.config();
+}
 console.log('[AI Service] Loaded ENV:', {
     PORT: process.env.PORT,
     DEFAULT_LLM_PROVIDER: process.env.DEFAULT_LLM_PROVIDER,
