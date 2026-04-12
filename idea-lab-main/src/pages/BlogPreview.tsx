@@ -2,10 +2,11 @@ import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Image, Share2, Clock, Send, MessageCircle, Copy, Check, Link2, Loader2, Sparkles } from "lucide-react";
 import { NeeshLogo } from "@/components/NeeshLogo";
+import ReactMarkdown from 'react-markdown';
 import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
-import chatbotAvatar from "@/assets/chatbot-avatar.png";
+import defaultChatbotAvatar from "@/assets/chatbot-avatar.png";
 import { toast } from "@/hooks/use-toast";
 import { generateShareableUrl } from "@/lib/slugify";
 import { useBlogs, type Blog, type CustomField } from "@/hooks/useBlogs";
@@ -69,6 +70,11 @@ const BlogPreview = ({ publicId }: BlogPreviewProps) => {
   const { reportQuestion } = useQuestions(id);
 
   const [blogData, setBlogData] = useState<BlogData | null>(null);
+
+  // Chatbot settings derived from blogData
+  const botName = blogData?.chatbot_name || 'Health Blog Assistant';
+  const chatbotAvatar = blogData?.bot_avatar_url || defaultChatbotAvatar;
+  const initialWelcomeMessage = blogData?.welcome_message || "Hello! 👋 I'm here to help answer any questions you have about this blog post. Feel free to ask me anything!";
   const [chatbotVisible, setChatbotVisible] = useState(false);
   const [loading, setLoading] = useState(true);
   const [scrollY, setScrollY] = useState(0);
@@ -76,14 +82,17 @@ const BlogPreview = ({ publicId }: BlogPreviewProps) => {
   const [coverImageBroken, setCoverImageBroken] = useState(false);
   const [activeSection, setActiveSection] = useState<string>("");
   const [visibleSections, setVisibleSections] = useState<Set<string>>(new Set());
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
-    {
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+
+  // Re-initialize welcome message when blogData changes
+  useEffect(() => {
+    setChatMessages([{
       id: "1",
       role: "bot",
-      content: "Hello! 👋 I'm here to help answer any questions you have about this blog post. Feel free to ask me anything!",
+      content: initialWelcomeMessage,
       timestamp: new Date(),
-    },
-  ]);
+    }]);
+  }, [initialWelcomeMessage]);
   const [chatInput, setChatInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
@@ -96,6 +105,13 @@ const BlogPreview = ({ publicId }: BlogPreviewProps) => {
     customBrandingText: string | null;
     showNeeshBranding: boolean;
   } | null>(null);
+
+  // Generate a stable session ID once per page load for grouping anonymous chat questions
+  const sessionIdRef = useRef<string>(
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" 
+      ? crypto.randomUUID() 
+      : Math.random().toString(36).substring(2, 15)
+  );
 
   const updateFeedbackValue = useCallback((fieldId: string, value: any) => {
     setFeedbackValues(prev => ({ ...prev, [fieldId]: value }));
@@ -163,6 +179,7 @@ const BlogPreview = ({ publicId }: BlogPreviewProps) => {
   const contentRef = useRef<HTMLDivElement>(null);
   const sectionRefs = useRef<Map<string, HTMLElement>>(new Map());
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
   const chatbotSectionRef = useRef<HTMLDivElement>(null);
   const commentSectionRef = useRef<HTMLDivElement>(null);
 
@@ -354,9 +371,21 @@ const BlogPreview = ({ publicId }: BlogPreviewProps) => {
     return () => observer.disconnect();
   }, [blogData]);
 
-  // Scroll chat to bottom when new messages arrive
+  // Scroll chat to bottom when new messages arrive, but only if user is near bottom
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (!chatContainerRef.current) return;
+    
+    const container = chatContainerRef.current;
+    const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 150;
+    
+    if (isAtBottom) {
+      // Use scrollTo on the container instead of scrollIntoView on the element
+      // to avoid jumping the whole page viewport
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: "smooth"
+      });
+    }
   }, [chatMessages, isTyping]);
 
   // Calculate reading time
@@ -550,6 +579,7 @@ const BlogPreview = ({ publicId }: BlogPreviewProps) => {
         query: message,
         userName: feedbackValues['__name__'] || undefined,
         userEmail: feedbackValues['__email__'] || undefined,
+        sessionId: sessionIdRef.current,
       }, { skipAuth: true });
 
       const botMessage: ChatMessage = {
@@ -917,7 +947,7 @@ const BlogPreview = ({ publicId }: BlogPreviewProps) => {
                     <div>
                       <h3 className="font-display text-xl font-bold text-foreground flex items-center gap-2">
                         <MessageCircle className="w-5 h-5 text-accent" />
-                        Ask Me Anything
+                        {botName}
                       </h3>
                       <p className="text-sm text-muted-foreground">Have questions? I'm here to help!</p>
                     </div>
@@ -935,31 +965,42 @@ const BlogPreview = ({ publicId }: BlogPreviewProps) => {
 
                   {/* FAQ Chips */}
                   <div className="relative flex flex-wrap gap-2 mb-6">
-                    {faqChips.map((chip, index) => (
+                    {faqs.map((faq) => (
                       <button
-                        key={index}
-                        onClick={() => handleSendMessage(chip)}
+                        key={faq.id}
+                        onClick={() => handleSendMessage(faq.question)}
                         className="px-4 py-2 rounded-full bg-muted/50 hover:bg-muted text-sm text-foreground border border-border/50 transition-all hover:scale-105 hover:shadow-md"
                       >
-                        {chip}
+                        {faq.question}
                       </button>
                     ))}
                   </div>
 
                   {/* Chat Messages */}
-                  <div className="relative h-64 overflow-y-auto mb-4 space-y-4 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent pr-2">
+                  <div 
+                    ref={chatContainerRef}
+                    className="relative h-64 overflow-y-auto mb-4 space-y-4 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent pr-2"
+                  >
                     {chatMessages.map((msg) => (
                       <div
                         key={msg.id}
                         className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                       >
                         <div
-                          className={`max-w-[80%] rounded-2xl px-4 py-3 ${msg.role === "user"
+                          className={`max-w-[85%] rounded-2xl px-4 py-3 ${msg.role === "user"
                             ? "bg-primary text-primary-foreground rounded-br-md"
-                            : "bg-muted/80 text-foreground rounded-bl-md"
+                            : "bg-muted/80 text-foreground border border-border/50 rounded-bl-md shadow-sm"
                             }`}
                         >
-                          <p className="text-sm leading-relaxed">{msg.content}</p>
+                          {msg.role === "user" ? (
+                            <p className="text-[15px] sm:text-base leading-relaxed tracking-wide whitespace-pre-wrap">{msg.content}</p>
+                          ) : (
+                            <div className="prose prose-sm dark:prose-invert max-w-none text-left w-full break-words [&>p]:mb-3 [&>p:last-child]:mb-0 [&>ul]:mb-3 [&>ol]:mb-3 [&>ul]:pl-6 [&>ol]:pl-6 [&>li]:mb-2 [&>ul>li]:list-disc [&>ol>li]:list-decimal leading-relaxed">
+                              <ReactMarkdown>
+                                {msg.content}
+                              </ReactMarkdown>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}

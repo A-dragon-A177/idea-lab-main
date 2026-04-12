@@ -1,0 +1,197 @@
+﻿
+  [ChatService] Response ready - confidence: LOW, answer 
+length: 33
+  [RagController] ChatService responded in 15418ms - 
+confidence: LOW
+  [ChatService] Unanswered question reported successfully
+> [RagController] chatWithProject called - projectId: 
+38f36368-abdf-4f4e-9013-811b6f707dff, query: "Summarize this 
+blog", linkedProjects: 0, provider: fallback, userName: 
+Ironman, userEmail: ironman@gmail.com
+  [RagController] Calling ChatService.askQuestion...
+> [ChatService] askQuestion called - projectId: 
+38f36368-abdf-4f4e-9013-811b6f707dff, query: "Summarize this 
+blog", linkedProjects: 0, provider: fallback, userName: 
+Ironman, userEmail: ironman@gmail.com
+  [ChatService] Question logged with ID: 
+34444583-30b2-4a8c-ab95-86661d2bd551
+  [ChatService] Generating query embedding...
+  [ChatService] Embedding generated, dimensions: 768
+  [VectorStoreService] Keyword search with terms: summarize, 
+blog
+  [VectorStoreService] Hybrid: 5 vector + 5 keyword results
+  [ChatService] Hybrid search returned 5 chunks
+  [ChatService] Using 5 context chunks for RAG generation
+> [LlmService] generateAnswer called - query: "Summarize 
+this blog", chunks: 5
+  [LlmService] Using RAG mode with context
+  [LlmService] Attempting primary provider: GEMINI
+  [LlmService] Sending request to Google Gemini 
+(gemini-flash-latest)...
+  [LlmService] Gemini responded successfully on attempt 1
+  [LlmService] Gemini responded successfully
+  [LlmService] Generated response successfully, length: 33
+  [ChatService] LLM flagged as unanswered, confidence: LOW
+  [ChatService] Answer logged with ID: 
+d53bc821-fe8d-42be-a2c9-f64247cfd7e2
+  [ChatService] Reporting unanswered question to backend: htt
+p://localhost:8081/api/public/projects/38f36368-abdf-4f4e-901
+3-811b6f707dff/questions/report (userName: Ironman, 
+userEmail: ironman@gmail.com)
+  [ChatService] Response ready - confidence: LOW, answer 
+length: 33
+  [RagController] ChatService responded in 6758ms - 
+confidence: LOW
+  [ChatService] Unanswered question reported successfully
+  [ChatService] Response ready - confidence: LOW, answer 
+length: 33
+  [RagController] ChatService responded in 7274ms - 
+confidence: LOW
+  [ChatService] Unanswered question reported successfully
+> [RagController] chatWithProject called - projectId: 
+b965337d-1080-4e4c-8932-e329956b7ea0, query: "Summarize this 
+blog", linkedProjects: 0, provider: fallback, userName: 
+Steve roggers, userEmail: aabhishekg031@gmail.com
+  [RagController] Calling ChatService.askQuestion...
+> [ChatService] askQuestion called - projectId: 
+b965337d-1080-4e4c-8932-e329956b7ea0, query: "Summarize this 
+blog", linkedProjects: 0, provider: fallback, userName: 
+Steve roggers, userEmail: aabhishekg031@gmail.com
+  [ChatService] Question logged with ID: 
+8f95d4b6-72ba-4b2d-9dee-fb4d3f36687d
+  [ChatService] Generating query embedding...
+  [ChatService] Embedding generated, dimensions: 768
+  [VectorStoreService] Keyword search with terms: summarize, 
+blog
+  [VectorStoreService] Hybrid: 5 vector + 5 keyword results
+  [ChatService] Hybrid search returned 5 chunks
+  [ChatService] Using 5 context chunks for RAG generation
+> [LlmService] generateAnswer called - query: "Summarize 
+this blog", chunks: 5
+  [LlmService] Using RAG mode with context
+  [LlmService] Attempting primary provider: GEMINI
+  [LlmService] Sending request to Google Gemini 
+(gemini-flash-latest)...
+  [LlmService] Gemini responded successfully on attempt 1
+  [LlmService] Gemini responded successfully
+  [LlmService] Generated response successfully, length: 33
+  [ChatService] LLM flagged as unanswered, confidence: LOW
+  [ChatService] Answer logged with ID: 
+e29dbfd5-1a47-46df-900c-d902fd2573e2
+  [ChatService] Reporting unanswered question to backend: htt
+p://localhost:8081/api/public/projects/b965337d-1080-4e4c-893
+2-e329956b7ea0/questions/report (userName: Steve roggers, 
+userEmail: aabhishekg031@gmail.com)
+  [ChatService] Response ready - confidence: LOW, answer 
+length: 33
+  [RagController] ChatService responded in 6037ms - 
+confidence: LOW
+  [ChatService] Unanswered question reported successfully
+  [IngestionService] Processing doc: Byju preparation.docx 
+(v1)
+  [IngestionService] Document content length: 36569 
+characters
+  [IngestionService] Created 111 chunks from document
+> [RagController] chatWithProject called - projectId: 
+b965337d-1080-4e4c-8932-e329956b7ea0, query: "Summarize this 
+blog", linkedProjects: 0, provider: fallback, userName: 
+Stark, userEmail: Starkin@gmail.com
+  [RagController] Calling ChatService.askQuestion...
+> [ChatService] askQuestion called - projectId: 
+b965337d-1080-4e4c-8932-e329956b7ea0, query: "Summarize this 
+blog", linkedProjects: 0, provider: fallback, userName: 
+Stark, userEmail: Starkin@gmail.com
+> [ChatService] Cache HIT for query: "Summarize this blog"
+  [RagController] ChatService responded in 2ms - confidence: 
+LOW
+  [RagController] chatWithProject called - projectId: 
+b965337d-1080-4e4c-8932-e329956b7ea0, query: "What's the 
+main takeaway?", linkedProjects: 0, provider: fallback, 
+userName: Stark, userEmail: Starkin@gmail.com
+  [RagController] Calling ChatService.askQuestion...
+  [ChatService] askQuestion called - projectId: 
+b965337d-1080-4e4c-8932-e329956b7ea0, query: "What's the 
+main takeaway?", linkedProjects: 0, provider: fallback, 
+userName: Stark, userEmail: Starkin@gmail.com
+  [ChatService] Cache HIT for query: "What's the main 
+takeaway?"
+  [RagController] ChatService responded in 0ms - confidence: 
+HIGH
+  [RagController] chatWithProject called - projectId: 
+b965337d-1080-4e4c-8932-e329956b7ea0, query: "Explain in 
+simple terms", linkedProjects: 0, provider: fallback, 
+userName: Stark, userEmail: Starkin@gmail.com
+  [RagController] Calling ChatService.askQuestion...
+  [ChatService] askQuestion called - projectId: 
+b965337d-1080-4e4c-8932-e329956b7ea0, query: "Explain in 
+simple terms", linkedProjects: 0, provider: fallback, 
+userName: Stark, userEmail: Starkin@gmail.com
+  [ChatService] Question logged with ID: 
+a3de1319-9e99-4f09-bb32-cbdd0faf52ae
+  [ChatService] Generating query embedding...
+  [ChatService] Embedding generated, dimensions: 768
+  [ChatService] Response ready - confidence: LOW, answer 
+length: 33
+  [RagController] ChatService responded in 4910ms - 
+confidence: LOW
+  [ChatService] Unanswered question reported successfully
+> [RagController] chatWithProject called - projectId: 
+b965337d-1080-4e4c-8932-e329956b7ea0, query: "Summarize this 
+blog", linkedProjects: 0, provider: fallback, userName: N/A, 
+userEmail: N/A
+  [RagController] Calling ChatService.askQuestion...
+> [ChatService] askQuestion called - projectId: 
+b965337d-1080-4e4c-8932-e329956b7ea0, query: "Summarize this 
+blog", linkedProjects: 0, provider: fallback, userName: N/A, 
+userEmail: N/A
+  [ChatService] Question logged with ID: 
+8f95d4b6-72ba-4b2d-9dee-fb4d3f36687d
+  [ChatService] Generating query embedding...
+  [ChatService] Embedding generated, dimensions: 768
+  [VectorStoreService] Keyword search with terms: summarize, 
+blog
+  [VectorStoreService] Hybrid: 0 vector + 0 keyword results
+  [ChatService] Hybrid search returned 0 chunks
+  [ChatService] No context chunks ΓÇö asking LLM to answer 
+directly
+> [LlmService] generateAnswer called - query: "Summarize 
+this blog", chunks: 0
+  [LlmService] No context provided ΓÇö using general answer 
+mode
+  [LlmService] Attempting primary provider: GEMINI
+  [LlmService] Sending request to Google Gemini 
+(gemini-flash-latest)...
+  [LlmService] Gemini responded successfully on attempt 1
+  [LlmService] Gemini responded successfully
+  [LlmService] Generated response successfully, length: 33
+  [ChatService] LLM flagged as unanswered, confidence: LOW
+  [ChatService] Answer logged with ID: 
+60fcfc2c-6630-46b9-935a-6836e4cd40c9
+  [ChatService] Reporting unanswered question to backend: htt
+p://localhost:8081/api/public/projects/b965337d-1080-4e4c-893
+2-e329956b7ea0/questions/report (userName: N/A, userEmail: 
+N/A)
+  [ChatService] Response ready - confidence: LOW, answer 
+length: 33
+  [RagController] ChatService responded in 22603ms - 
+confidence: LOW
+  [ChatService] Unanswered question reported successfully
+  [ChatService] Response ready - confidence: LOW, answer 
+length: 33
+  [RagController] ChatService responded in 2970ms - 
+confidence: LOW
+  [ChatService] Unanswered question reported successfully
+> [RagController] chatWithProject called - projectId: 
+b965337d-1080-4e4c-8932-e329956b7ea0, query: "Summarize this 
+blog", linkedProjects: 0, provider: fallback, userName: N/A, 
+userEmail: N/A
+  [RagController] Calling ChatService.askQuestion...
+> [ChatService] askQuestion called - projectId: 
+b965337d-1080-4e4c-8932-e329956b7ea0, query: "Summarize this 
+blog", linkedProjects: 0, provider: fallback, userName: N/A, 
+userEmail: N/A
+> [ChatService] Cache HIT for query: "Summarize this blog"
+  [RagController] ChatService responded in 0ms - confidence: 
+LOW
+
+

@@ -14,4 +14,3 @@ run_log.txt
 backend_*.log
 .env
 *.env
-

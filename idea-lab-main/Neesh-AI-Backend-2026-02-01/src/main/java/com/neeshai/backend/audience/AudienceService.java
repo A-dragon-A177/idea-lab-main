@@ -17,6 +17,8 @@ import java.util.UUID;
 public class AudienceService {
 
     private static final Logger log = LoggerFactory.getLogger(AudienceService.class);
+    
+    private static final String NO_CONTEXT_FALLBACK = "As of now this is not yet discussed in the document, but I can help you with other details from the blog.";
 
     private final AudienceMemberRepository memberRepository;
     private final AudienceQuestionRepository questionRepository;
@@ -38,8 +40,16 @@ public class AudienceService {
      */
     public AudienceDTOs.AudienceMemberListResponse getAudienceMembers(UUID projectId) {
         List<AudienceMember> members = memberRepository.findByProjectIdOrderByLastInteractionAtDesc(projectId);
+        
+        // Fetch question counts batch
+        List<Object[]> counts = questionRepository.countQuestionsByMemberForProject(projectId);
+        java.util.Map<String, Integer> countsMap = new java.util.HashMap<>();
+        for (Object[] row : counts) {
+            countsMap.put(row[0].toString(), ((Long) row[1]).intValue());
+        }
+
         List<AudienceDTOs.AudienceMemberSummary> summaries = members.stream()
-                .map(AudienceDTOs.AudienceMemberSummary::fromEntity)
+                .map(m -> AudienceDTOs.AudienceMemberSummary.fromEntity(m, countsMap.getOrDefault(m.getId().toString(), 0)))
                 .toList();
         return new AudienceDTOs.AudienceMemberListResponse(summaries, summaries.size());
     }
@@ -152,9 +162,17 @@ public class AudienceService {
         String userName = (request.userName() != null && !request.userName().isBlank())
                 ? request.userName()
                 : "Anonymous";
-        String userEmail = (request.userEmail() != null && !request.userEmail().isBlank())
-                ? request.userEmail()
-                : "anonymous-" + System.currentTimeMillis() + "@chatbot";
+        String userEmail;
+        if (request.userEmail() != null && !request.userEmail().isBlank()) {
+            userEmail = request.userEmail();
+        } else if (request.sessionId() != null && !request.sessionId().isBlank()) {
+            // Use stable session-based email so all questions in one browser session
+            // are grouped under a single audience member
+            userEmail = "anonymous-" + request.sessionId() + "@chatbot";
+        } else {
+            // Ultimate fallback: use a generic anonymous email
+            userEmail = "anonymous-unknown@chatbot";
+        }
 
         // Find the project
         com.neeshai.backend.project.Project project = projectRepository.findById(projectId)
@@ -178,12 +196,31 @@ public class AudienceService {
 
         // Create the question
         AudienceQuestion question = new AudienceQuestion(member, request.query().trim());
-        if (request.answer() != null && !request.answer().isBlank()) {
-            question.setChatbotAnswer(request.answer().trim());
+        String answer = request.answer() != null ? request.answer().trim() : "";
+        
+        // Robust check: detect fallback phrase using case-insensitive contains
+        // Catches: "As of now it is not yet discussed", "As of now it is not yet discussed.", etc.
+        boolean isFallback = false;
+        if (!answer.isEmpty()) {
+            String lowerAnswer = answer.toLowerCase().trim();
+            isFallback = lowerAnswer.contains("it is not yet discussed")
+                      || lowerAnswer.contains("this is not yet discussed")
+                      || lowerAnswer.contains("not yet discussed in the document");
+        }
+        
+        log.info("[recordChatInteraction] project={}, answer='{}', isFallback={}", 
+            projectId, answer, isFallback);
+
+        if (!answer.isEmpty() && !isFallback) {
+            question.setChatbotAnswer(answer);
             question.setStatus("answered");
             question.setAnsweredAt(Instant.now());
         } else {
+            if (!answer.isEmpty()) {
+                question.setChatbotAnswer(answer);
+            }
             question.setStatus("unanswered");
+            log.info("[recordChatInteraction] Marked as UNANSWERED for project={}", projectId);
         }
         questionRepository.save(question);
 
@@ -191,18 +228,19 @@ public class AudienceService {
         computeAndSetScores(member);
         memberRepository.save(member);
 
-        log.info("Chat interaction recorded for project {} by {}", projectId, userEmail);
+        log.info("Chat interaction recorded for project {} by {}. Status: {}", 
+            projectId, userEmail, question.getStatus());
     }
 
     /**
      * Compute and set confidence + engagement scores on an audience member.
      *
-     * confidenceScore (0.0–1.0): How confident we are in persona detection
+     * confidenceScore (0.0-1.0): How confident we are in persona detection
      * - Has occupation: +0.3
      * - Has feedback: +0.3
      * - Has asked questions: +0.1 per question, max +0.4
      *
-     * engagementScore (0–100): How engaged the user is
+     * engagementScore (0-100): How engaged the user is
      * - Each question: +10 points
      * - Submitted feedback: +20 points
      * - Has occupation set: +10 points
@@ -243,7 +281,7 @@ public class AudienceService {
 
         // Skip anonymous chatbot users who never provided a real email
         if (email == null || email.isBlank() || email.contains("@chatbot")) {
-            log.warn("Skipping reply email for user '{}' — no real email provided (email: {})",
+            log.warn("Skipping reply email for user '{}' - no real email provided (email: {})",
                     member.getName(), email);
             return;
         }
@@ -297,4 +335,3 @@ public class AudienceService {
         }
     }
 }
-

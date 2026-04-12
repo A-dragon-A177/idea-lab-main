@@ -21,7 +21,12 @@ const FeedbackBuilder = lazy(() => import("./pages/FeedbackBuilder"));
 const Chatbot = lazy(() => import("./pages/Chatbot"));
 const ProfileSettings = lazy(() => import("./pages/ProfileSettings"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
-const Pricing = lazy(() => import("./pages/Pricing"));
+
+// Landing page sub-pages
+const FeaturesPage = lazy(() => import("./pages/FeaturesPage"));
+const BlogInfoPage = lazy(() => import("./pages/BlogInfoPage"));
+const SimulationPage = lazy(() => import("./pages/SimulationPage"));
+const PricingPage = lazy(() => import("./pages/PricingPage"));
 
 const queryClient = new QueryClient();
 
@@ -44,6 +49,10 @@ const App = () => (
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/features" element={<FeaturesPage />} />
+            <Route path="/blog-info" element={<BlogInfoPage />} />
+            <Route path="/simulation" element={<SimulationPage />} />
+            <Route path="/pricing" element={<PricingPage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/dashboard" element={<Dashboard />} />
@@ -54,7 +63,6 @@ const App = () => (
             <Route path="/p/:slugWithId" element={<PublicBlog />} />
             <Route path="/profile" element={<ProfileSettings />} />
             <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/pricing" element={<Pricing />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
@@ -64,4 +72,4 @@ const App = () => (
   </QueryClientProvider>
 );
 
-export default App;
+export default App;

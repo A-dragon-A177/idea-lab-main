@@ -18,8 +18,13 @@ public class AudienceDTOs {
                         Double engagementScore,
                         String feedbackSummary,
                         Instant firstInteractionAt,
-                        Instant lastInteractionAt) {
+                        Instant lastInteractionAt,
+                        int questionCount) {
                 public static AudienceMemberSummary fromEntity(AudienceMember m) {
+                        return fromEntity(m, 0);
+                }
+
+                public static AudienceMemberSummary fromEntity(AudienceMember m, int qCount) {
                         String summary = m.getFeedbackText();
                         if (summary != null && summary.length() > 100) {
                                 summary = summary.substring(0, 100) + "...";
@@ -27,7 +32,7 @@ public class AudienceDTOs {
                         return new AudienceMemberSummary(
                                         m.getId(), m.getName(), m.getEmail(), m.getOccupation(),
                                         m.getPersonaType(), m.getConfidenceScore(), m.getEngagementScore(),
-                                        summary, m.getFirstInteractionAt(), m.getLastInteractionAt());
+                                        summary, m.getFirstInteractionAt(), m.getLastInteractionAt(), qCount);
                 }
         }
 
@@ -111,6 +116,7 @@ public class AudienceDTOs {
                         String query,
                         String answer,
                         String userName,
-                        String userEmail) {
+                        String userEmail,
+                        String sessionId) {
         }
 }

@@ -36,7 +36,7 @@ public class ProjectService {
         String plan = (user != null && user.getSubscriptionPlan() != null) ? user.getSubscriptionPlan() : "FREE";
 
         if ("FREE".equalsIgnoreCase(plan)) {
-            long currentCount = projectRepository.findByOwnerId(ownerId).size();
+            long currentCount = projectRepository.countByOwnerId(ownerId);
             if (currentCount >= FREE_PROJECT_LIMIT) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                         "Free users can create up to " + FREE_PROJECT_LIMIT + " projects. " +
@@ -51,6 +51,10 @@ public class ProjectService {
         project.setOneLineSummary(request.oneLineSummary());
         project.setIntroduction(request.introduction());
         project.setDescription(request.description());
+        project.setChatbotName(request.chatbotName());
+        project.setWelcomeMessage(request.welcomeMessage());
+        project.setPrimaryColor(request.primaryColor());
+        project.setBotAvatarUrl(request.botAvatarUrl());
 
         return projectRepository.save(project);
     }
@@ -93,6 +97,25 @@ public class ProjectService {
                         project.setIntroduction(request.introduction());
                     if (request.description() != null)
                         project.setDescription(request.description());
+
+                    // Chatbot Settings
+                    if (request.chatbotName() != null)
+                        project.setChatbotName(request.chatbotName());
+                    if (request.welcomeMessage() != null)
+                        project.setWelcomeMessage(request.welcomeMessage());
+                    if (request.primaryColor() != null)
+                        project.setPrimaryColor(request.primaryColor());
+                    
+                    // We allow null for botAvatarUrl to "reset" it if passed explicitly, 
+                    // but we need a way to distinguish omission vs null. 
+                    // Let's just say empty string clears it.
+                    if (request.botAvatarUrl() != null) {
+                        if (request.botAvatarUrl().isEmpty()) {
+                            project.setBotAvatarUrl(null);
+                        } else {
+                            project.setBotAvatarUrl(request.botAvatarUrl());
+                        }
+                    }
 
                     // Status Transition Logic
                     if (request.status() != null) {

@@ -82,9 +82,21 @@ export class IngestionService {
                 console.log(`[IngestionService] Successfully indexed "${doc.original_filename}" (${chunks.length} chunks)`);
 
             } catch (err: any) {
-                console.error(`[IngestionService] Error processing doc ${doc.id} (${doc.original_filename}):`, err.message);
-                throw err; // Stop and fail the whole ingestion if a doc fails
+                console.error(`[IngestionService] ❌ Error processing doc ${doc.id} (${doc.original_filename}):`, err.message);
+                // We DON'T throw the error here anymore. 
+                // This allows the loop to continue to the next document.
             }
+        }
+
+        // Final step: update ingestion_status to 'completed'
+        console.log(`[IngestionService] Updating ingestion_status to 'completed' for project ${projectId}`);
+        const { error: updateError } = await this.supabase
+            .from('projects')
+            .update({ ingestion_status: 'completed' })
+            .eq('id', projectId);
+
+        if (updateError) {
+            console.error(`[IngestionService] Failed to update project status: ${updateError.message}`);
         }
 
         console.log(`[IngestionService] Ingestion complete for project ${projectId}`);

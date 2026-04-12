@@ -2,9 +2,15 @@ import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
-import { RagController } from './controllers/RagController';
 
 dotenv.config();
+console.log('[AI Service] Loaded ENV:', {
+    PORT: process.env.PORT,
+    DEFAULT_LLM_PROVIDER: process.env.DEFAULT_LLM_PROVIDER,
+    OPENROUTER_MODEL: process.env.OPENROUTER_MODEL,
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY ? 'Set' : 'Not Set'
+});
+
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -12,16 +18,44 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(bodyParser.json());
 
+// ─── Health Check ───────────────────────────────────────────────
+app.get('/health', (_req, res) => {
+    res.json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() });
+});
+
+// ─── Rate Limiting ──────────────────────────────────────────────
+import rateLimit from 'express-rate-limit';
+
+// Global rate limit: 200 requests per minute per IP
+const globalLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 200,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many requests, please try again later.' }
+});
+app.use(globalLimiter);
+
+// Chat-specific rate limit: 15 requests per minute per IP (LLM calls are expensive)
+const chatLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 15,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Chat rate limit exceeded. Please wait a moment before asking another question.' }
+});
+
 // Apply Security Middleware to all /internal routes
 import { requireInternalAuth } from './middleware/auth';
 app.use('/internal', requireInternalAuth);
 
-const ragController = new RagController();
+import { ChatController } from './controllers/ChatController';
+const chatController = new ChatController();
 
 // Internal API routes
-app.post('/internal/ingest/:projectId', (req, res) => ragController.ingestProject(req, res));
-app.post('/internal/query', (req, res) => ragController.queryVectorStore(req, res));
-app.post('/internal/chat', (req, res) => ragController.chatWithProject(req, res));
+app.post('/internal/ingest/:projectId', (req, res) => chatController.ingestProject(req, res));
+app.post('/internal/query', (req, res) => chatController.queryVectorStore(req, res));
+app.post('/internal/chat', chatLimiter, (req, res) => chatController.chatWithProject(req, res));
 
 // Learning Loop Routes
 import { LearningController } from './controllers/LearningController';
@@ -38,6 +72,34 @@ app.get('/internal/projects/:projectId/readiness', (req, res) => insightControll
 app.get('/internal/projects/:projectId/risks', (req, res) => insightController.getRisks(req, res));
 
 
-app.listen(port as number, "127.0.0.1", () => {
+const server = app.listen(port as number, "127.0.0.1", () => {
     console.log(`AI Service running on port ${port}`);
+});
+
+// ─── Graceful Shutdown ──────────────────────────────────────────
+const shutdown = (signal: string) => {
+    console.log(`\n[AI Service] Received ${signal}. Shutting down gracefully...`);
+    server.close(() => {
+        console.log('[AI Service] HTTP server closed.');
+        process.exit(0);
+    });
+    // Force exit after 10s if connections don't close
+    setTimeout(() => {
+        console.error('[AI Service] Forced shutdown after timeout.');
+        process.exit(1);
+    }, 10000);
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
+
+// ─── Global Error Handling ──────────────────────────────────────
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('[AI Service] Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+    console.error('[AI Service] Uncaught Exception:', error);
+    // Optional: Graceful shutdown on error
+    // shutdown('uncaughtException');
 });

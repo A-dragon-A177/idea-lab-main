@@ -12,4 +12,7 @@ public interface AudienceQuestionRepository extends JpaRepository<AudienceQuesti
     List<AudienceQuestion> findByAudienceMemberIdOrderByAskedAtDesc(UUID audienceMemberId);
 
     List<AudienceQuestion> findByAudienceMemberIdAndStatus(UUID audienceMemberId, String status);
+
+    @org.springframework.data.jpa.repository.Query("SELECT q.audienceMember.id, count(q) FROM AudienceQuestion q WHERE q.audienceMember.project.id = :projectId GROUP BY q.audienceMember.id")
+    List<Object[]> countQuestionsByMemberForProject(UUID projectId);
 }

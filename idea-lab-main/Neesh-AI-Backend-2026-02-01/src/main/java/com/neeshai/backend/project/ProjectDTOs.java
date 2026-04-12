@@ -9,7 +9,11 @@ public class ProjectDTOs {
             String title,
             String oneLineSummary,
             String introduction,
-            String description) {
+            String description,
+            String chatbotName,
+            String welcomeMessage,
+            String primaryColor,
+            String botAvatarUrl) {
     }
 
     public record UpdateProjectRequest(
@@ -17,7 +21,11 @@ public class ProjectDTOs {
             String oneLineSummary,
             String introduction,
             String description,
-            String status) {
+            String status,
+            String chatbotName,
+            String welcomeMessage,
+            String primaryColor,
+            String botAvatarUrl) {
     }
 
     // PRIVATE DTO (Owner access)
@@ -29,6 +37,10 @@ public class ProjectDTOs {
             String introduction,
             String description,
             String status,
+            String chatbotName,
+            String welcomeMessage,
+            String primaryColor,
+            String botAvatarUrl,
             ZonedDateTime createdAt,
             ZonedDateTime updatedAt) {
         public static PrivateProjectDTO fromEntity(Project project) {
@@ -40,6 +52,10 @@ public class ProjectDTOs {
                     project.getIntroduction(),
                     project.getDescription(),
                     project.getStatus(),
+                    project.getChatbotName(),
+                    project.getWelcomeMessage(),
+                    project.getPrimaryColor(),
+                    project.getBotAvatarUrl(),
                     project.getCreatedAt(),
                     project.getUpdatedAt());
         }
@@ -52,6 +68,10 @@ public class ProjectDTOs {
             String oneLineSummary,
             String introduction,
             String description,
+            String chatbotName,
+            String welcomeMessage,
+            String primaryColor,
+            String botAvatarUrl,
             ZonedDateTime updatedAt) {
         public static PublicProjectDTO fromEntity(Project project) {
             return new PublicProjectDTO(
@@ -60,6 +80,10 @@ public class ProjectDTOs {
                     project.getOneLineSummary(),
                     project.getIntroduction(),
                     project.getDescription(),
+                    project.getChatbotName(),
+                    project.getWelcomeMessage(),
+                    project.getPrimaryColor(),
+                    project.getBotAvatarUrl(),
                     project.getUpdatedAt());
         }
     }

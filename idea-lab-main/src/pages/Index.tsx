@@ -6,7 +6,6 @@ import Navbar from "../components/Navbar";
 import ScrollCanvas from "../components/ScrollCanvas";
 import HeroSection from "../components/sections/HeroSection";
 import ProblemLoopSection from "../components/sections/ProblemLoopSection";
-import ProductSimSection from "../components/sections/ProductSimSection";
 import FeaturesSection from "../components/sections/FeaturesSection";
 import BlogShowcaseSection from "../components/sections/BlogShowcaseSection";
 import MetricsSection from "../components/sections/MetricsSection";
@@ -53,7 +52,6 @@ function Index() {
           <ProblemLoopSection />
           <FeaturesSection />
           <BlogShowcaseSection />
-          <ProductSimSection />
           <MetricsSection />
           <PersonaSection />
           <TransformSection />
@@ -67,3 +65,4 @@ function Index() {
 }
 
 export default Index;
+

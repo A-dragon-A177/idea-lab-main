@@ -14,7 +14,11 @@ public class BlogDTOs {
                         String coverImageUrl,
                         String introduction,
                         String content,
-                        List<Map<String, Object>> customFields) {
+                        List<Map<String, Object>> customFields,
+                        String chatbotName,
+                        String welcomeMessage,
+                        String primaryColor,
+                        String botAvatarUrl) {
         }
 
         public record UpdateBlogRequest(

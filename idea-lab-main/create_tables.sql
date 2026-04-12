@@ -2,7 +2,7 @@
 
 CREATE TABLE IF NOT EXISTS questions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    project_id UUID NOT NULL REFERENCES projects(id),
+    project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     question_text TEXT NOT NULL,
     normalized_text TEXT NOT NULL,
     ask_count INTEGER NOT NULL DEFAULT 1,
@@ -14,7 +14,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_questions_project_normalized ON questions(
 
 CREATE TABLE IF NOT EXISTS manual_answers (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    question_id UUID NOT NULL REFERENCES questions(id),
+    question_id UUID NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
     answer_text TEXT NOT NULL,
     answer_type TEXT NOT NULL DEFAULT 'SUPPLEMENT' CHECK (answer_type IN ('OVERRIDE', 'SUPPLEMENT')),
     created_by UUID NOT NULL REFERENCES users(id),
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS manual_answers (
 
 CREATE TABLE IF NOT EXISTS answer_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    question_id UUID NOT NULL REFERENCES questions(id),
+    question_id UUID NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
     answer_text TEXT NOT NULL,
     confidence_level TEXT NOT NULL,
     is_ai_answer BOOLEAN NOT NULL DEFAULT TRUE, 
@@ -33,8 +33,8 @@ CREATE TABLE IF NOT EXISTS answer_logs (
 
 CREATE TABLE IF NOT EXISTS feedback (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    question_id UUID NOT NULL REFERENCES questions(id),
-    answer_log_id UUID NOT NULL REFERENCES answer_logs(id),
+    question_id UUID NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
+    answer_log_id UUID NOT NULL REFERENCES answer_logs(id) ON DELETE CASCADE,
     feedback_type TEXT NOT NULL CHECK (feedback_type IN ('POSITIVE', 'NEGATIVE')),
     comment TEXT,
     submitted_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP

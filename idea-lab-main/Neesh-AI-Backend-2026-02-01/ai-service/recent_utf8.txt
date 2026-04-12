@@ -1,0 +1,100 @@
+﻿[ChatService] Response ready - confidence: LOW, answer length: 33
+[RagController] ChatService responded in 22603ms - confidence: LOW
+[ChatService] Unanswered question reported successfully
+[RagController] chatWithProject called - projectId: b965337d-1080-4e4c-8932-e329956b7ea0, query: "What's the main takeaway?", linkedProjects: 0, provider: fallback, userName: N/A, userEmail: N/A
+[RagController] Calling ChatService.askQuestion...
+[ChatService] askQuestion called - projectId: b965337d-1080-4e4c-8932-e329956b7ea0, query: "What's the main takeaway?", linkedProjects: 0, provider: fallback, userName: N/A, userEmail: N/A
+[ChatService] Question logged with ID: 5891a5db-1359-4012-94e5-562533a94c08
+[ChatService] Generating query embedding...
+[ChatService] Embedding generated, dimensions: 768
+[VectorStoreService] Keyword search with terms: main, takeaway
+[VectorStoreService] Hybrid: 0 vector + 0 keyword results
+[ChatService] Hybrid search returned 0 chunks
+[ChatService] No context chunks ΓÇö asking LLM to answer directly
+[LlmService] generateAnswer called - query: "What's the main takeaway?", chunks: 0
+[LlmService] No context provided ΓÇö using general answer mode
+[LlmService] Attempting primary provider: GEMINI
+[LlmService] Sending request to Google Gemini (gemini-flash-latest)...
+[LlmService] Gemini responded successfully on attempt 1
+[LlmService] Gemini responded successfully
+[LlmService] Generated response successfully, length: 33
+[ChatService] LLM flagged as unanswered, confidence: LOW
+[ChatService] Answer logged with ID: b200b39e-ed25-4274-983d-f3a80a8843fd
+[ChatService] Reporting unanswered question to backend: http://localhost:8081/api/public/projects/b965337d-1080-4e4c-8932-e329956b7ea0/questions/report (userName: N/A, userEmail: N/A)
+[ChatService] Response ready - confidence: LOW, answer length: 33
+[RagController] ChatService responded in 9532ms - confidence: LOW
+[ChatService] Unanswered question reported successfully
+[RagController] chatWithProject called - projectId: b965337d-1080-4e4c-8932-e329956b7ea0, query: "Explain in simple terms", linkedProjects: 0, provider: fallback, userName: N/A, userEmail: N/A
+[RagController] Calling ChatService.askQuestion...
+[ChatService] askQuestion called - projectId: b965337d-1080-4e4c-8932-e329956b7ea0, query: "Explain in simple terms", linkedProjects: 0, provider: fallback, userName: N/A, userEmail: N/A
+[ChatService] Question logged with ID: a3de1319-9e99-4f09-bb32-cbdd0faf52ae
+[ChatService] Generating query embedding...
+[ChatService] Embedding generated, dimensions: 768
+[VectorStoreService] Keyword search with terms: explain, simple, terms
+[VectorStoreService] Hybrid: 0 vector + 0 keyword results
+[ChatService] Hybrid search returned 0 chunks
+[ChatService] No context chunks ΓÇö asking LLM to answer directly
+[LlmService] generateAnswer called - query: "Explain in simple terms", chunks: 0
+[LlmService] No context provided ΓÇö using general answer mode
+[LlmService] Attempting primary provider: GEMINI
+[LlmService] Sending request to Google Gemini (gemini-flash-latest)...
+[LlmService] Gemini responded successfully on attempt 1
+[LlmService] Gemini responded successfully
+[LlmService] Generated response successfully, length: 33
+[ChatService] LLM flagged as unanswered, confidence: LOW
+[ChatService] Answer logged with ID: ffc13e5b-9747-4484-a9fe-667eea46fab9
+[ChatService] Reporting unanswered question to backend: http://localhost:8081/api/public/projects/b965337d-1080-4e4c-8932-e329956b7ea0/questions/report (userName: N/A, userEmail: N/A)
+[ChatService] Response ready - confidence: LOW, answer length: 33
+[RagController] ChatService responded in 4836ms - confidence: LOW
+[ChatService] Unanswered question reported successfully
+[RagController] chatWithProject called - projectId: b965337d-1080-4e4c-8932-e329956b7ea0, query: "Related topics?", linkedProjects: 0, provider: fallback, userName: N/A, userEmail: N/A
+[RagController] Calling ChatService.askQuestion...
+[ChatService] askQuestion called - projectId: b965337d-1080-4e4c-8932-e329956b7ea0, query: "Related topics?", linkedProjects: 0, provider: fallback, userName: N/A, userEmail: N/A
+[ChatService] Question logged with ID: 46279a67-d9b4-41d8-83ba-165bd193b913
+[ChatService] Generating query embedding...
+[ChatService] Embedding generated, dimensions: 768
+[VectorStoreService] Keyword search with terms: related, topics
+[VectorStoreService] Hybrid: 0 vector + 0 keyword results
+[ChatService] Hybrid search returned 0 chunks
+[ChatService] No context chunks ΓÇö asking LLM to answer directly
+[LlmService] generateAnswer called - query: "Related topics?", chunks: 0
+[LlmService] No context provided ΓÇö using general answer mode
+[LlmService] Attempting primary provider: GEMINI
+[LlmService] Sending request to Google Gemini (gemini-flash-latest)...
+[LlmService] Gemini responded successfully on attempt 1
+[LlmService] Gemini responded successfully
+[LlmService] Generated response successfully, length: 33
+[ChatService] LLM flagged as unanswered, confidence: LOW
+[ChatService] Answer logged with ID: f78da850-5d34-4a5b-b24c-5cb7508ddec4
+[ChatService] Reporting unanswered question to backend: http://localhost:8081/api/public/projects/b965337d-1080-4e4c-8932-e329956b7ea0/questions/report (userName: N/A, userEmail: N/A)
+[ChatService] Response ready - confidence: LOW, answer length: 33
+[RagController] ChatService responded in 2970ms - confidence: LOW
+[ChatService] Unanswered question reported successfully
+[RagController] chatWithProject called - projectId: b965337d-1080-4e4c-8932-e329956b7ea0, query: "Summarize this blog", linkedProjects: 0, provider: fallback, userName: N/A, userEmail: N/A
+[RagController] Calling ChatService.askQuestion...
+[ChatService] askQuestion called - projectId: b965337d-1080-4e4c-8932-e329956b7ea0, query: "Summarize this blog", linkedProjects: 0, provider: fallback, userName: N/A, userEmail: N/A
+[ChatService] Cache HIT for query: "Summarize this blog"
+[RagController] ChatService responded in 0ms - confidence: LOW
+[RagController] chatWithProject called - projectId: b965337d-1080-4e4c-8932-e329956b7ea0, query: "what is the financial Strategy ?", linkedProjects: 0, provider: fallback, userName: N/A, userEmail: N/A
+[RagController] Calling ChatService.askQuestion...
+[ChatService] askQuestion called - projectId: b965337d-1080-4e4c-8932-e329956b7ea0, query: "what is the financial Strategy ?", linkedProjects: 0, provider: fallback, userName: N/A, userEmail: N/A
+[ChatService] Question logged with ID: 196abd8f-dbf5-4ffe-a847-793bfe936350
+[ChatService] Generating query embedding...
+[ChatService] Embedding generated, dimensions: 768
+[VectorStoreService] Keyword search with terms: financial, strategy
+[VectorStoreService] Hybrid: 0 vector + 0 keyword results
+[ChatService] Hybrid search returned 0 chunks
+[ChatService] No context chunks ΓÇö asking LLM to answer directly
+[LlmService] generateAnswer called - query: "what is the financial Strategy ?", chunks: 0
+[LlmService] No context provided ΓÇö using general answer mode
+[LlmService] Attempting primary provider: GEMINI
+[LlmService] Sending request to Google Gemini (gemini-flash-latest)...
+[LlmService] Gemini responded successfully on attempt 1
+[LlmService] Gemini responded successfully
+[LlmService] Generated response successfully, length: 33
+[ChatService] LLM flagged as unanswered, confidence: LOW
+[ChatService] Answer logged with ID: cdda722d-f4ee-4788-aa04-3e6d16d08474
+[ChatService] Reporting unanswered question to backend: http://localhost:8081/api/public/projects/b965337d-1080-4e4c-8932-e329956b7ea0/questions/report (userName: N/A, userEmail: N/A)
+[ChatService] Response ready - confidence: LOW, answer length: 33
+[RagController] ChatService responded in 28124ms - confidence: LOW
+[ChatService] Unanswered question reported successfully

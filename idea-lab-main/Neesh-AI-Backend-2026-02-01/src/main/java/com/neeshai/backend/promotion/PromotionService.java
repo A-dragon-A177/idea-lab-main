@@ -17,19 +17,15 @@ import java.util.stream.Collectors;
 public class PromotionService {
 
     private static final Logger log = LoggerFactory.getLogger(PromotionService.class);
-    private static final int MAX_TAGS = 5;
 
     private final BlogPromotionRepository promotionRepository;
-    private final PromotionTagRepository tagRepository;
     private final BlogRepository blogRepository;
     private final UserRepository userRepository;
 
     public PromotionService(BlogPromotionRepository promotionRepository,
-                            PromotionTagRepository tagRepository,
                             BlogRepository blogRepository,
                             UserRepository userRepository) {
         this.promotionRepository = promotionRepository;
-        this.tagRepository = tagRepository;
         this.blogRepository = blogRepository;
         this.userRepository = userRepository;
     }
@@ -52,62 +48,34 @@ public class PromotionService {
         Blog blog = blogRepository.findByProjectId(projectId)
                 .orElseThrow(() -> new IllegalArgumentException("No blog found for this project. Create a blog first."));
 
-        // Validate tags
-        if (tags == null || tags.isEmpty()) {
-            throw new IllegalArgumentException("At least one tag is required for promotion.");
-        }
-
-        List<String> normalizedTags = tags.stream()
-                .map(t -> t.toLowerCase().trim())
-                .filter(t -> !t.isEmpty())
-                .distinct()
-                .collect(Collectors.toList());
-
-        if (normalizedTags.size() > MAX_TAGS) {
-            throw new IllegalArgumentException("Maximum " + MAX_TAGS + " tags allowed per promotion.");
-        }
-
         // Check if already promoted
         Optional<BlogPromotion> existing = promotionRepository.findByBlogId(blog.getId());
         if (existing.isPresent()) {
             BlogPromotion promo = existing.get();
-            if ("ACTIVE".equals(promo.getStatus())) {
-                // Update tags instead
-                tagRepository.deleteByPromotionId(promo.getId());
-                normalizedTags.forEach(tag -> tagRepository.save(new PromotionTag(promo.getId(), tag)));
-                log.info("Updated promotion tags for blog: {} by user: {}", blog.getId(), userId);
-                return toDTO(promo, blog, normalizedTags);
-            } else {
-                // Re-activate
+            if (!"ACTIVE".equals(promo.getStatus())) {
                 promo.setStatus("ACTIVE");
                 promotionRepository.save(promo);
-                tagRepository.deleteByPromotionId(promo.getId());
-                normalizedTags.forEach(tag -> tagRepository.save(new PromotionTag(promo.getId(), tag)));
                 log.info("Re-activated promotion for blog: {} by user: {}", blog.getId(), userId);
-                return toDTO(promo, blog, normalizedTags);
             }
+            return toDTO(promo, blog, Collections.emptyList());
         }
 
         // Create new promotion
         BlogPromotion promotion = new BlogPromotion(blog.getId(), userId);
         promotionRepository.save(promotion);
 
-        normalizedTags.forEach(tag -> tagRepository.save(new PromotionTag(promotion.getId(), tag)));
-
-        log.info("Blog promoted: {} with tags: {} by user: {}", blog.getId(), normalizedTags, userId);
-        return toDTO(promotion, blog, normalizedTags);
+        log.info("Blog promoted: {} by user: {}", blog.getId(), userId);
+        return toDTO(promotion, blog, Collections.emptyList());
     }
 
     /**
      * Get all promotions for a user.
      */
     public List<PromotionDTOs.PromotionDTO> getUserPromotions(UUID userId) {
-        List<BlogPromotion> promotions = promotionRepository.findByUserId(userId);
+        List<BlogPromotion> promotions = promotionRepository.findByUserIdAndStatus(userId, "ACTIVE");
         return promotions.stream().map(promo -> {
             Blog blog = blogRepository.findById(promo.getBlogId()).orElse(null);
-            List<String> tags = tagRepository.findByPromotionId(promo.getId())
-                    .stream().map(PromotionTag::getTag).collect(Collectors.toList());
-            return toDTO(promo, blog, tags);
+            return toDTO(promo, blog, Collections.emptyList());
         }).collect(Collectors.toList());
     }
 
@@ -116,59 +84,46 @@ public class PromotionService {
      */
     @Transactional
     public void removePromotion(UUID userId, UUID promotionId) {
+        log.info("[PromotionService] Received request to remove promotion with ID: {} from user: {}", promotionId, userId);
         BlogPromotion promo = promotionRepository.findById(promotionId)
-                .orElseThrow(() -> new IllegalArgumentException("Promotion not found"));
+                .orElseThrow(() -> {
+                    log.error("[PromotionService] Promotion not found for ID: {}", promotionId);
+                    return new IllegalArgumentException("Promotion not found");
+                });
 
         if (!promo.getUserId().equals(userId)) {
+            log.warn("[PromotionService] User {} not authorized to remove promotion {}", userId, promotionId);
             throw new IllegalArgumentException("Not authorized to remove this promotion");
         }
 
         promo.setStatus("REMOVED");
         promotionRepository.save(promo);
-        log.info("Promotion removed: {} by user: {}", promotionId, userId);
+        log.info("[PromotionService] Promotion status successfully set to REMOVED for ID: {}", promotionId);
     }
 
     /**
-     * Get similar blogs for "More Like This" section — PUBLIC endpoint.
+     * Get similar blogs for "More Like This" section.
+     * Returns random active promotions from the network.
      */
     public List<PromotionDTOs.SimilarBlogDTO> getSimilarBlogs(UUID projectId, int limit) {
-        // Find the blog for this project
-        Optional<Blog> blogOpt = blogRepository.findByProjectId(projectId);
-        if (blogOpt.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        Blog blog = blogOpt.get();
-        List<BlogPromotion> promotionsToShow = new ArrayList<>();
-        List<String> tempTags = new ArrayList<>();
-
-        // Find the promotion for this blog
-        Optional<BlogPromotion> promoOpt = promotionRepository.findByBlogIdAndStatus(blog.getId(), "ACTIVE");
+        Optional<Blog> currentBlogOpt = blogRepository.findByProjectId(projectId);
         
-        if (promoOpt.isPresent()) {
-            tempTags = tagRepository.findByPromotionId(promoOpt.get().getId())
-                    .stream().map(PromotionTag::getTag).collect(Collectors.toList());
-
-            // Find similar promotions by tag overlap
-            List<BlogPromotion> similar = promotionRepository.findSimilarPromotions(promoOpt.get().getId(), limit);
-            promotionsToShow.addAll(similar);
-            
-            if (promotionsToShow.size() < limit) {
-                int needed = limit - promotionsToShow.size();
-                List<UUID> excludeIds = promotionsToShow.stream()
-                        .map(BlogPromotion::getId)
-                        .collect(Collectors.toList());
-                excludeIds.add(promoOpt.get().getId());
-                
-                List<BlogPromotion> randomFill = promotionRepository.findRandomActivePromotionsExcluding(excludeIds, needed);
-                promotionsToShow.addAll(randomFill);
-            }
+        List<BlogPromotion> allActive = promotionRepository.findRandomActivePromotions(limit + 5);
+        
+        List<BlogPromotion> promotionsToShow;
+        
+        if (currentBlogOpt.isPresent()) {
+            UUID currentBlogId = currentBlogOpt.get().getId();
+            promotionsToShow = allActive.stream()
+                    .filter(p -> !p.getBlogId().equals(currentBlogId))
+                    .limit(limit)
+                    .collect(Collectors.toList());
         } else {
-            // This blog isn't promoted, but we should still show active promotions from others
-            promotionsToShow = promotionRepository.findRandomActivePromotions(limit);
+            promotionsToShow = allActive.stream()
+                    .limit(limit)
+                    .collect(Collectors.toList());
         }
 
-        final List<String> currentTags = tempTags;
         return promotionsToShow.stream().map(simPromo -> {
             Blog simBlog = blogRepository.findById(simPromo.getBlogId()).orElse(null);
             if (simBlog == null) return null;
@@ -178,14 +133,6 @@ public class PromotionService {
 
             User owner = userRepository.findById(simPromo.getUserId()).orElse(null);
 
-            List<String> simTags = tagRepository.findByPromotionId(simPromo.getId())
-                    .stream().map(PromotionTag::getTag).collect(Collectors.toList());
-
-            // Find matching tags
-            List<String> matchingTags = simTags.stream()
-                    .filter(currentTags::contains)
-                    .collect(Collectors.toList());
-
             return new PromotionDTOs.SimilarBlogDTO(
                     simProject.getId(),
                     simBlog.getHeading() != null ? simBlog.getHeading() : simProject.getTitle(),
@@ -193,24 +140,17 @@ public class PromotionService {
                     simBlog.getCoverImageUrl(),
                     simProject.getSlug(),
                     owner != null ? owner.getName() : "Unknown",
-                    matchingTags
+                    Collections.emptyList()
             );
         }).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
-    /**
-     * Get promotion stats for a user (used in admin).
-     */
     public long getPromotionCountForUser(UUID userId) {
         return promotionRepository.countByUserId(userId);
     }
 
     public List<String> getTagsForUser(UUID userId) {
-        List<BlogPromotion> promotions = promotionRepository.findByUserId(userId);
-        List<UUID> promoIds = promotions.stream().map(BlogPromotion::getId).collect(Collectors.toList());
-        if (promoIds.isEmpty()) return Collections.emptyList();
-        return tagRepository.findByPromotionIdIn(promoIds)
-                .stream().map(PromotionTag::getTag).distinct().collect(Collectors.toList());
+        return Collections.emptyList();
     }
 
     private PromotionDTOs.PromotionDTO toDTO(BlogPromotion promo, Blog blog, List<String> tags) {
@@ -225,6 +165,7 @@ public class PromotionService {
                 promo.getCreatedAt()
         );
     }
+
 
     /**
      * Get branding info for a blog's public page.

@@ -3,6 +3,14 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { BetaBadgeLight } from "./BetaBadge";
 
+const NAV_ITEMS = [
+  { label: "Home", to: "/" },
+  { label: "Features", to: "/features" },
+  { label: "Blog", to: "/blog-info" },
+  { label: "Simulation", to: "/simulation" },
+  { label: "Pricing", to: "/pricing" },
+];
+
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -26,25 +34,27 @@ export default function Navbar() {
     >
       <div className="max-w-[1440px] mx-auto px-6 h-16 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <img
-            src="/neesh-logo.png"
-            alt="Neesh AI Logo"
-            className="w-9 h-9 object-contain"
-            style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.1))" }}
-          />
-          <span className="text-gray-900 font-bold text-base tracking-wide">Neesh AI</span>
+          <Link to="/">
+            <img
+              src="/neesh-logo.png"
+              alt="Neesh AI Logo"
+              className="w-9 h-9 object-contain"
+              style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.1))" }}
+            />
+          </Link>
+          <Link to="/" className="text-gray-900 font-bold text-base tracking-wide">Neesh AI</Link>
           <BetaBadgeLight variant="glow" type="beta" />
         </div>
 
         <div className="hidden md:flex items-center gap-8">
-          {["Features", "Pricing", "Docs", "Blog"].map((item) => (
-            <a
-              key={item}
-              href={`#${item.toLowerCase()}`}
+          {NAV_ITEMS.map((item) => (
+            <Link
+              key={item.label}
+              to={item.to}
               className="text-gray-700 hover:text-gray-900 text-sm transition-colors duration-200 font-semibold"
             >
-              {item}
-            </a>
+              {item.label}
+            </Link>
           ))}
         </div>
 
@@ -73,12 +83,17 @@ export default function Navbar() {
           animate={{ opacity: 1, height: "auto" }}
           className="md:hidden bg-white border-t border-gray-100 px-6 py-4 flex flex-col gap-4"
         >
-          {["Features", "Pricing", "Docs", "Blog"].map((item) => (
-            <a key={item} href={`#${item.toLowerCase()}`} className="text-gray-700 text-sm font-semibold">
-              {item}
-            </a>
+          {NAV_ITEMS.map((item) => (
+            <Link
+              key={item.label}
+              to={item.to}
+              className="text-gray-700 text-sm font-semibold"
+              onClick={() => setMobileOpen(false)}
+            >
+              {item.label}
+            </Link>
           ))}
-          <Link to="/signup" className="bg-[#09daed] text-black text-sm font-bold px-4 py-2 w-full text-center">
+          <Link to="/signup" className="bg-[#09daed] text-black text-sm font-bold px-4 py-2 w-full text-center" onClick={() => setMobileOpen(false)}>
             Start Free
           </Link>
         </motion.div>
@@ -86,3 +101,4 @@ export default function Navbar() {
     </motion.nav>
   );
 }
+

@@ -1,5 +1,5 @@
-import { FOUNDER_SYSTEM_PROMPT, GREETING_SYSTEM_PROMPT, constructUserPrompt } from '../prompts/SystemPrompts';
-
+import { FOUNDER_SYSTEM_PROMPT, constructUserPrompt } from '../prompts/SystemPrompts';
+import { CONFIG } from '../config';
 export type LlmProvider = string;
 
 export interface GeneratedAnswer {
@@ -26,7 +26,7 @@ export class LlmService {
 
         if (this.fallbackProvider === 'GEMINI') {
             this.fallbackApiKey = process.env.GEMINI_API_KEY || null;
-            this.fallbackModel = 'gemini-flash-latest';
+            this.fallbackModel = 'gemini-2.5-flash';
             if (this.fallbackApiKey) {
                 console.log(`[LlmService] Initialized with Gemini fallback model: ${this.fallbackModel}`);
             } else {
@@ -123,65 +123,40 @@ export class LlmService {
     }
 
     /**
-     * Generate a warm greeting response
-     */
-    async generateGreeting(query: string, provider?: string, apiKey?: string): Promise<GeneratedAnswer> {
-        console.log(`[LlmService] generateGreeting called - query: "${query}"`);
-
-        const config = this.resolveConfig(provider, apiKey);
-
-        const messages = [
-            { role: 'system', content: GREETING_SYSTEM_PROMPT },
-            { role: 'user', content: query }
-        ];
-
-        const text = await this.callProviderWithFallback(config, messages, 100, 0.7);
-
-        return {
-            answer: text.trim() || "Hello! 👋 I'm here to help you with questions about this project. Ask me anything!",
-            confidence: 'HIGH'
-        };
-    }
-
-    /**
      * Generate an answer using RAG context or direct Q&A
      */
-    async generateAnswer(query: string, contextChunks: string[], provider?: string, apiKey?: string): Promise<GeneratedAnswer> {
+    async generateAnswer(query: string, contextChunks: string[], history: any[], provider?: string, apiKey?: string): Promise<{ answer: string; confidence: string }> {
         console.log(`[LlmService] generateAnswer called - query: "${query}", chunks: ${contextChunks.length}`);
 
         const config = this.resolveConfig(provider, apiKey);
 
         try {
-            let userPrompt: string;
+            // Respect MAX constraints
+            const limitedContext = contextChunks.slice(0, CONFIG.MAX_CONTEXT_CHUNKS);
+            const limitedHistory = history && history.length > 0 ? history.slice(-CONFIG.MAX_HISTORY) : [];
 
-            if (contextChunks.length === 0) {
-                userPrompt = constructUserPrompt(query, []);
-                console.log('[LlmService] No context provided — using general answer mode');
-            } else {
-                userPrompt = constructUserPrompt(query, contextChunks);
-                console.log('[LlmService] Using RAG mode with context');
-            }
+            const userPrompt = constructUserPrompt(query, limitedContext, limitedHistory);
+            console.log('[LlmService] Using RAG mode with context');
 
             const messages = [
                 { role: 'system', content: FOUNDER_SYSTEM_PROMPT },
                 { role: 'user', content: userPrompt }
             ];
 
-            let text = await this.callProviderWithFallback(config, messages, 800, 0);
+            let text = await this.callProviderWithFallback(config, messages, 4000, 0);
 
-            // Final fallback if totally empty
+            // Final fallback if totally empty (API issue)
             if (!text.trim()) {
                 console.warn('[LlmService] Both providers failed or empty, returning fallback string');
                 return { 
-                    answer: "I couldn't generate a specific answer right now. Could you please try rephrasing your question?", 
+                    answer: "I couldn't generate a specific answer right now. Could you please try again?", 
                     confidence: 'LOW' 
                 };
             }
 
             console.log(`[LlmService] Generated response successfully, length: ${text.length}`);
 
-            let confidence: 'HIGH' | 'MEDIUM' | 'LOW' = contextChunks.length > 0 ? 'HIGH' : 'MEDIUM';
-            return { answer: text.trim(), confidence };
+            return { answer: text.trim(), confidence: 'HIGH' };
 
         } catch (error: any) {
             console.error("[LlmService] LLM Generation Error:", error.message || error);
@@ -198,12 +173,13 @@ export class LlmService {
             console.log(`[LlmService] Attempting primary provider: ${config.provider}`);
             return await this.callProvider(config, messages, maxTokens, temperature);
         } catch (error: any) {
-            // Don't fallback on auth errors
+            // Don't fallback on auth errors of the primary provider — they need fixing in settings
             if (error.message?.includes('Invalid') || error.message?.includes('API key')) {
                 throw error;
             }
 
-            console.warn(`[LlmService] Primary provider (${config.provider}) failed: ${error.message}. Attempting fallback...`);
+            const primaryError = error.message || 'Unknown error';
+            console.warn(`[LlmService] Primary provider (${config.provider}) failed: ${primaryError}. Attempting fallback...`);
 
             // 2. Fallback Try
             let fallbackConfig: ProviderConfig | null = null;
@@ -218,8 +194,15 @@ export class LlmService {
                     console.log(`[LlmService] Running FALLBACK using ${fallbackConfig.provider}...`);
                     return await this.callProvider(fallbackConfig, messages, maxTokens, temperature);
                 } catch (fallbackError: any) {
-                    console.error(`[LlmService] Fallback also failed: ${fallbackError.message}`);
-                    throw new Error(`Both primary and fallback LLM providers failed: ${error.message} / ${fallbackError.message}`);
+                    const fbError = fallbackError.message || 'Unknown error';
+                    console.error(`[LlmService] Fallback also failed: ${fbError}`);
+                    
+                    // Cleaner error message for the end user/developer
+                    if (fbError.includes('Invalid') || fbError.includes('API key')) {
+                        throw new Error(`The primary AI service is currently overloaded (${primaryError.substring(0, 50)}...), and your fallback API key for ${fallbackConfig.provider} appears to be invalid. Please check your settings.`);
+                    }
+                    
+                    throw new Error(`Both primary and fallback AI providers are currently unavailable. Primary: ${primaryError.substring(0, 60)}. Fallback: ${fbError.substring(0, 60)}.`);
                 }
             }
 
@@ -238,6 +221,8 @@ export class LlmService {
                 return this.callOpenAI(config.apiKey, messages, maxTokens, temperature);
             case 'CLAUDE':
                 return this.callClaude(config.apiKey, messages, maxTokens, temperature);
+            case 'GEMINI_15_FLASH':
+            case 'GEMINI_15_PRO':
             case 'GEMINI':
                 return this.callGemini(config.apiKey, messages, maxTokens, temperature);
             default:
@@ -294,7 +279,8 @@ export class LlmService {
                     temperature,
                     seed: 42,
                     reasoning: { exclude: true }
-                })
+                }),
+                signal: AbortSignal.timeout(30000)
             });
 
             if (response.ok) {
@@ -350,7 +336,8 @@ export class LlmService {
                 max_tokens: maxTokens,
                 temperature,
                 seed: 42,
-            })
+            }),
+            signal: AbortSignal.timeout(30000)
         });
 
         if (!response.ok) {
@@ -403,7 +390,8 @@ export class LlmService {
                 temperature,
                 system: systemMessage,
                 messages: anthropicMessages
-            })
+            }),
+            signal: AbortSignal.timeout(30000)
         });
 
         if (!response.ok) {
@@ -452,14 +440,9 @@ export class LlmService {
         });
     }
 
-    /**
-     * Internal Gemini API call with retry logic.
-     */
     private async _callGeminiInternal(apiKey: string, messages: any[], maxTokens: number, temperature: number): Promise<string> {
-        const model = 'gemini-flash-latest';
+        const model = 'gemini-1.5-flash';
         console.log(`[LlmService] Sending request to Google Gemini (${model})...`);
-
-        // Gemini uses a different format: contents array with parts
         const systemMessage = messages.find(m => m.role === 'system')?.content || '';
         const geminiContents = messages
             .filter(m => m.role !== 'system')
@@ -470,7 +453,7 @@ export class LlmService {
 
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-        const maxRetries = 5;
+        const maxRetries = 4;
         let lastError = '';
         let data: any = null;
 
@@ -487,7 +470,8 @@ export class LlmService {
                         maxOutputTokens: maxTokens,
                         temperature,
                     }
-                })
+                }),
+                signal: AbortSignal.timeout(30000)
             });
 
             if (response.ok) {
@@ -498,7 +482,14 @@ export class LlmService {
 
             const errorBody = await response.text();
             lastError = errorBody;
-            console.error(`[LlmService] Gemini API error (${response.status}) attempt ${attempt}: ${errorBody}`);
+            const isTransientError = [500, 502, 503, 504].includes(response.status);
+            if (isTransientError && attempt < maxRetries) {
+                // Exponential backoff: 2s, 4s, 8s, 16s
+                const waitMs = Math.pow(2, attempt) * 1000;
+                console.warn(`[LlmService] Gemini transient error (${response.status}), retrying in ${waitMs}ms (attempt ${attempt}/${maxRetries})...`);
+                await new Promise(resolve => setTimeout(resolve, waitMs));
+                continue;
+            }
 
             if (response.status === 400 && errorBody.includes('API_KEY_INVALID')) {
                 throw new Error('Invalid Gemini API key. Please check your key in Settings.');
@@ -506,6 +497,7 @@ export class LlmService {
             if (response.status === 403) {
                 throw new Error('Gemini API key does not have permission. Please check your API key and enable the Generative Language API.');
             }
+
             if (response.status === 429 && attempt < maxRetries) {
                 // Parse server-suggested retry delay if available
                 let waitMs = attempt * 5000; // default: 5s, 10s, 15s, 20s

@@ -41,8 +41,11 @@ public class BlogService {
 
         Optional<Blog> blogOpt = blogRepository.findByProjectId(projectId);
         if (blogOpt.isEmpty()) {
-            // Return empty blog content
-            return Optional.of(new BlogDTOs.BlogContentDTO("", "", "", "", List.of()));
+            return Optional.of(new BlogDTOs.BlogContentDTO("", "", "", "", List.of(),
+                    projectOpt.get().getChatbotName(),
+                    projectOpt.get().getWelcomeMessage(),
+                    projectOpt.get().getPrimaryColor(),
+                    projectOpt.get().getBotAvatarUrl()));
         }
 
         Blog blog = blogOpt.get();
@@ -59,7 +62,11 @@ public class BlogService {
                 blog.getCoverImageUrl(),
                 blog.getIntroduction(),
                 blog.getContent(),
-                customFields));
+                customFields,
+                projectOpt.get().getChatbotName(),
+                projectOpt.get().getWelcomeMessage(),
+                projectOpt.get().getPrimaryColor(),
+                projectOpt.get().getBotAvatarUrl()));
     }
 
     @Transactional
@@ -137,7 +144,11 @@ public class BlogService {
                 savedBlog.getCoverImageUrl(),
                 savedBlog.getIntroduction(),
                 savedBlog.getContent(),
-                request.customFields()));
+                request.customFields(),
+                project.getChatbotName(),
+                project.getWelcomeMessage(),
+                project.getPrimaryColor(),
+                project.getBotAvatarUrl()));
     }
 
     private List<Map<String, Object>> parseCustomFields(String json) {

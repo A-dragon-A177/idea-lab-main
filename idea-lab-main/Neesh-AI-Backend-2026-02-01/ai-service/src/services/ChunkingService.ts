@@ -8,8 +8,8 @@ export class ChunkingService {
         // Fixed chunk size and overlap ensures same output for same input
         // Separators order ensures consistent splitting hierarchy
         this.splitter = new RecursiveCharacterTextSplitter({
-            chunkSize: 500,
-            chunkOverlap: 50,
+            chunkSize: 1200,
+            chunkOverlap: 150,
             separators: ["\n\n", "\n", " ", ""],
             keepSeparator: false
         });

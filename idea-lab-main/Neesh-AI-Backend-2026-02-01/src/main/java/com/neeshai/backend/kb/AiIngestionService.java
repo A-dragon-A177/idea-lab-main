@@ -11,6 +11,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.UUID;
+import org.springframework.scheduling.annotation.Async;
 
 /**
  * AiIngestionService
@@ -41,18 +42,16 @@ public class AiIngestionService {
      * the document is already saved; the worst case is a brief delay
      * before the chatbot knows about the new content.
      */
+    /**
+     * Trigger ingestion asynchronously (managed by Spring ThreadPool).
+     */
+    @Async("aiIngestionExecutor")
     public void triggerIngestionAsync(UUID projectId) {
-        Thread thread = new Thread(() -> {
-            try {
-                triggerIngestion(projectId);
-            } catch (Exception e) {
-                // Log but don't propagate — ingestion failure must not break the upload flow
-                log.error("[AiIngestionService] Async ingestion failed for project {}: {}", projectId, e.getMessage());
-            }
-        });
-        thread.setDaemon(true);
-        thread.setName("ai-ingest-" + projectId);
-        thread.start();
+        try {
+            triggerIngestion(projectId);
+        } catch (Exception e) {
+            log.error("[AiIngestionService] Managed async ingestion failed for project {}: {}", projectId, e.getMessage());
+        }
     }
 
     /**

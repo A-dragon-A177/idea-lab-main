@@ -17,13 +17,43 @@ class ApiClient {
         this.baseUrl = baseUrl;
     }
 
+    public async safeGetSession() {
+        try {
+            const { data: { session }, error } = await supabase.auth.getSession();
+            if (error) throw error;
+            return session;
+        } catch (err) {
+            console.warn('[API] getSession failed (timeout or error), attempting localStorage fallback:', err);
+            try {
+                // Manually search localStorage for the Supabase auth token
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
+                        const stored = localStorage.getItem(key);
+                        if (stored) {
+                            const parsed = JSON.parse(stored);
+                            if (parsed?.access_token) {
+                                console.log('[API] Session recovered from localStorage');
+                                // Return partial session object containing the token
+                                return { access_token: parsed.access_token } as any;
+                            }
+                        }
+                    }
+                }
+            } catch (fallbackErr) {
+                console.error('[API] LocalStorage fallback failed:', fallbackErr);
+            }
+            return null;
+        }
+    }
+
     private async getAuthHeaders(): Promise<HeadersInit> {
         console.log('[API] Getting auth headers...');
-        const { data: { session } } = await supabase.auth.getSession();
         const headers: HeadersInit = {
             'Content-Type': 'application/json',
         };
 
+        const session = await this.safeGetSession();
         if (session?.access_token) {
             headers['Authorization'] = `Bearer ${session.access_token}`;
             console.log('[API] Token found, length:', session.access_token.length);
@@ -39,8 +69,23 @@ class ApiClient {
 
         if (response.status === 401) {
             console.error(`[API ${timestamp}] 401 Unauthorized - Session expired or invalid`);
-            // Token expired or invalid - sign out and redirect
-            await supabase.auth.signOut();
+            
+            // Perform signOut safely - don't let a lock timeout here block the failure
+            try {
+                // Use a non-blocking timeout for signOut to avoid long hangs
+                const signOutPromise = supabase.auth.signOut();
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('SignOut timeout')), 2000)
+                );
+                
+                Promise.race([signOutPromise, timeoutPromise]).catch(e => 
+                    console.warn('[API] Safe signOut non-blocking error:', e.message)
+                );
+            } catch (e) {
+                console.warn('[API] signOut failed:', e);
+            }
+
+            // Still redirect to login
             window.location.href = '/login';
             throw new Error('Session expired. Please log in again.');
         }
@@ -142,17 +187,17 @@ class ApiClient {
 
     // Special method for file uploads (multipart/form-data)
     async uploadFile<T>(endpoint: string, file: File, fieldName: string = 'file'): Promise<T> {
-        const { data: { session } } = await supabase.auth.getSession();
+        const headers: HeadersInit = {};
+        
+        const session = await this.safeGetSession();
+        if (session?.access_token) {
+            headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
 
         const formData = new FormData();
         formData.append(fieldName, file);
 
-        const headers: HeadersInit = {};
-        if (session?.access_token) {
-            headers['Authorization'] = `Bearer ${session.access_token}`;
-        }
         // Don't set Content-Type - browser will set it with boundary for multipart
-
         const response = await fetch(`${this.baseUrl}${endpoint}`, {
             method: 'POST',
             headers,

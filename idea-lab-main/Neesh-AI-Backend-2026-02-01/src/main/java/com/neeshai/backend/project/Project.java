@@ -53,6 +53,18 @@ public class Project {
     @Column(name = "updated_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")
     private ZonedDateTime updatedAt;
 
+    @Column(name = "chatbot_name", columnDefinition = "TEXT")
+    private String chatbotName;
+
+    @Column(name = "welcome_message", columnDefinition = "TEXT")
+    private String welcomeMessage;
+
+    @Column(name = "primary_color", length = 20)
+    private String primaryColor;
+
+    @Column(name = "bot_avatar_url", columnDefinition = "TEXT")
+    private String botAvatarUrl;
+
     public Project() {
     }
 
@@ -169,5 +181,37 @@ public class Project {
 
     public void setUpdatedAt(ZonedDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getChatbotName() {
+        return chatbotName;
+    }
+
+    public void setChatbotName(String chatbotName) {
+        this.chatbotName = chatbotName;
+    }
+
+    public String getWelcomeMessage() {
+        return welcomeMessage;
+    }
+
+    public void setWelcomeMessage(String welcomeMessage) {
+        this.welcomeMessage = welcomeMessage;
+    }
+
+    public String getPrimaryColor() {
+        return primaryColor;
+    }
+
+    public void setPrimaryColor(String primaryColor) {
+        this.primaryColor = primaryColor;
+    }
+
+    public String getBotAvatarUrl() {
+        return botAvatarUrl;
+    }
+
+    public void setBotAvatarUrl(String botAvatarUrl) {
+        this.botAvatarUrl = botAvatarUrl;
     }
 }

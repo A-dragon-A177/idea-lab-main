@@ -13,6 +13,9 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
     // @SQLRestriction ensures these only return non-deleted
     List<Project> findByOwnerId(UUID ownerId);
 
+    // Lightweight count — avoids loading all entities for limit checks
+    long countByOwnerId(UUID ownerId);
+
     Optional<Project> findBySlug(String slug);
 
     boolean existsBySlug(String slug);

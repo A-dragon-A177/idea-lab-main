@@ -83,36 +83,6 @@ const getOccupationColor = (occupation: string) => {
   return occupationColors[occupation] || occupationColors["default"];
 };
 
-// Mock responses - will be replaced with real data later
-const mockResponses = [
-  {
-    id: "1",
-    name: "Alex",
-    email: "Alex@gmail.com",
-    occupation: "Business Man",
-    feedback: "It is good",
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
-  },
-  {
-    id: "2",
-    name: "Sarah Johnson",
-    email: "sarah.j@gmail.com",
-    occupation: "Marketing Manager",
-    feedback: "Very helpful tool for content creation",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face",
-  },
-  {
-    id: "3",
-    name: "Mike Chen",
-    email: "mike.chen@company.com",
-    occupation: "Content Writer",
-    feedback: "Saves me hours every week",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
-  },
-];
-
-// Mock notifications removed — now using real data from backend via NotificationTab
-
 const Project = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -130,7 +100,7 @@ const Project = () => {
     if (tab === 'blog') return 'blog';
     return 'overview';
   });
-  // selectedQuestion state removed — handled inside NotificationTab/ClusterDetailModal
+  
   const [editingDocId, setEditingDocId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -146,18 +116,6 @@ const Project = () => {
   const [responseSearch, setResponseSearch] = useState("");
   const [occupationFilter, setOccupationFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-
-  // Notification badge count fetch
-  useEffect(() => {
-    if (id) fetchBadgeCount();
-  }, [id, fetchBadgeCount]);
-
-  // Fetch clusters for overview
-  useEffect(() => {
-    if (activeTab === "overview") {
-      fetchClusters();
-    }
-  }, [activeTab, fetchClusters]);
 
   const [sections, setSections] = useState<Array<{
     id: string;
@@ -185,18 +143,19 @@ const Project = () => {
     { id: "2", title: "Content", content: "", type: "text" },
   ]);
 
-  // Get unique occupations for filter
-  const uniqueOccupations = [...new Set(mockResponses.map((r: typeof mockResponses[0]) => r.occupation))];
-
-  // Filter responses
-  const filteredResponses = mockResponses.filter(response => {
+  // Filter responses (using real audience data)
+  const filteredResponses = audienceMembers.filter(member => {
+    if (!member.feedbackSummary) return false;
     const matchesSearch = responseSearch === "" ||
-      response.name.toLowerCase().includes(responseSearch.toLowerCase()) ||
-      response.email.toLowerCase().includes(responseSearch.toLowerCase()) ||
-      response.feedback.toLowerCase().includes(responseSearch.toLowerCase());
-    const matchesOccupation = occupationFilter === "all" || response.occupation === occupationFilter;
+      member.name.toLowerCase().includes(responseSearch.toLowerCase()) ||
+      member.email.toLowerCase().includes(responseSearch.toLowerCase()) ||
+      (member.feedbackSummary && member.feedbackSummary.toLowerCase().includes(responseSearch.toLowerCase()));
+    const matchesOccupation = occupationFilter === "all" || member.occupation === occupationFilter;
     return matchesSearch && matchesOccupation;
   });
+
+  // Get unique occupations for filter
+  const uniqueOccupations = [...new Set(audienceMembers.map(m => m.occupation).filter(Boolean))];
 
   // Notifications filtering/sorting now handled inside NotificationTab component
 
@@ -808,17 +767,10 @@ const Project = () => {
                 description: project.description || "",
                 status: project.status,
               }}
-              feedbackData={audienceMembers.length > 0
-                ? audienceMembers.map((m) => ({
-                  name: m.name,
-                  occupation: m.occupation || "Unknown",
-                  feedback: m.feedbackSummary || "",
-                }))
-                : []
-              }
               questionsData={clusters.slice(0, 5).map((q) => ({
                 question: q.canonicalQuestion,
                 count: q.totalAskCount,
+                answeredCount: q.status === "answered" ? q.totalAskCount : 0,
               }))}
               onDeleteProject={handleDeleteProject}
               isDeleting={isDeleting}

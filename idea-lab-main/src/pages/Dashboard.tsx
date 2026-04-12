@@ -128,8 +128,6 @@ const Dashboard = () => {
   const [isUpgrading, setIsUpgrading] = useState(false);
   const [promoteOpen, setPromoteOpen] = useState(false);
   const [promoteProjectId, setPromoteProjectId] = useState<string | null>(null);
-  const [promoteTags, setPromoteTags] = useState<string[]>([]);
-  const [promoteTagInput, setPromoteTagInput] = useState("");
   const [isPromoting, setIsPromoting] = useState(false);
   const navigate = useNavigate();
 
@@ -234,17 +232,15 @@ const Dashboard = () => {
   };
 
   const handlePromoteBlog = async () => {
-    if (!promoteProjectId || promoteTags.length === 0) {
-      toast.error("Please select a project and add at least one tag.");
+    if (!promoteProjectId) {
+      toast.error("Please select a project.");
       return;
     }
     setIsPromoting(true);
     try {
-      await submitPromotion(promoteProjectId, promoteTags);
+      await submitPromotion(promoteProjectId);
       toast.success("Blog promoted successfully! It will appear in 'More Like This' sections.");
       setPromoteOpen(false);
-      setPromoteTags([]);
-      setPromoteTagInput("");
       setPromoteProjectId(null);
     } catch (err: any) {
       toast.error(err?.message || "Failed to promote blog.");
@@ -253,20 +249,7 @@ const Dashboard = () => {
     }
   };
 
-  const handleAddTag = () => {
-    const tag = promoteTagInput.trim().toLowerCase();
-    if (!tag) return;
-    if (promoteTags.length >= 5) {
-      toast.error("Maximum 5 tags allowed.");
-      return;
-    }
-    if (promoteTags.includes(tag)) {
-      toast.error("Tag already added.");
-      return;
-    }
-    setPromoteTags(prev => [...prev, tag]);
-    setPromoteTagInput("");
-  };
+
 
   const handleSignOut = async () => {
     const { error } = await signOut();
@@ -566,7 +549,7 @@ const Dashboard = () => {
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <p className="text-sm text-muted-foreground">
-              Your blog will appear in the "More Like This" section of blogs with matching tags.
+              Your blog will appear in the "More Like This" section of all other published blogs.
             </p>
             <div className="space-y-2">
               <label className="text-sm font-medium">Select Project</label>
@@ -581,31 +564,7 @@ const Dashboard = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Tags (max 5)</label>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Add a tag (e.g. AI, Marketing)"
-                  value={promoteTagInput}
-                  onChange={(e) => setPromoteTagInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddTag())}
-                />
-                <Button type="button" variant="outline" size="icon" onClick={handleAddTag} disabled={promoteTags.length >= 5}>
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
-              {promoteTags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {promoteTags.map(tag => (
-                    <span key={tag} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                      {tag}
-                      <button onClick={() => setPromoteTags(prev => prev.filter(t => t !== tag))} className="hover:text-destructive">×</button>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-            <Button onClick={handlePromoteBlog} className="w-full" disabled={isPromoting || !promoteProjectId || promoteTags.length === 0}>
+            <Button onClick={handlePromoteBlog} className="w-full" disabled={isPromoting || !promoteProjectId}>
               {isPromoting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
               Promote Blog
             </Button>
@@ -615,25 +574,6 @@ const Dashboard = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-6 py-8">
-        {/* Subscription Banner for Pro users */}
-        {isPro && (
-          <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-blue-600/5 via-indigo-600/5 to-transparent border border-blue-500/20 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="px-2.5 py-1 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-bold">PRO</span>
-              <div className="flex flex-col">
-                <span className="text-sm text-muted-foreground">You have unlimited projects and promotion access.</span>
-                {daysRemaining !== null && (
-                  <span className={`text-xs font-medium mt-0.5 ${daysRemaining <= 5 ? 'text-red-500' : daysRemaining <= 10 ? 'text-blue-500' : 'text-muted-foreground'}`}>
-                    ⏳ {daysRemaining > 0 ? `Expires in ${daysRemaining} day${daysRemaining !== 1 ? 's' : ''}` : 'Subscription expired'}
-                  </span>
-                )}
-              </div>
-            </div>
-            <Button variant="outline" size="sm" onClick={() => setPromoteOpen(true)} className="gap-1.5">
-              🚀 Promote a Blog
-            </Button>
-          </div>
-        )}
 
         {/* Title and filters */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
@@ -784,19 +724,28 @@ const Dashboard = () => {
                 <Megaphone className="w-5 h-5 text-blue-600" />
               </div>
               <div>
-                <h2 className="font-display text-xl font-bold text-foreground flex items-center gap-2">
-                  Cross-Promotion Engine
+                <div className="flex items-center gap-2">
+                  <h2 className="font-display text-xl font-bold text-foreground">
+                    Cross-Promotion Engine
+                  </h2>
                   {isPro && (
-                    <span className="px-2 py-0.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[10px] font-bold">PRO</span>
+                    <span className="px-2 py-0.5 rounded-full bg-[#09daed]/10 text-[#09daed] text-[10px] font-bold border border-[#09daed]/20">PRO</span>
                   )}
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  Promote your blogs in other users' "More Like This" sections
-                </p>
+                </div>
+                <div className="flex flex-col">
+                  <p className="text-sm text-muted-foreground">
+                    Promote your blogs in other users' "More Like This" sections
+                  </p>
+                  {isPro && daysRemaining !== null && (
+                    <span className={`text-[10px] font-medium mt-0.5 ${daysRemaining <= 5 ? 'text-red-500' : 'text-[#09daed]'}`}>
+                      ⏳ {daysRemaining > 0 ? `PRO status expires in ${daysRemaining} day${daysRemaining !== 1 ? 's' : ''}` : 'Subscription expired'}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
             {isPro && (
-              <Button onClick={() => setPromoteOpen(true)} className="gap-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white">
+              <Button onClick={() => setPromoteOpen(true)} className="gap-1.5 shadow-sm">
                 <Plus className="w-4 h-4" />
                 Add Project
               </Button>
@@ -806,9 +755,9 @@ const Dashboard = () => {
           {isPro ? (
             // ── Pro users: show managed promotions ──
             <div>
-              {promotions.length > 0 ? (
+              {promotions.filter(p => p.status === 'ACTIVE').length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {promotions.map((promo) => {
+                  {promotions.filter(p => p.status === 'ACTIVE').map((promo) => {
                     const project = projects.find(p => p.id === promo.projectId);
                     const coverImg = project ? (getProjectCoverImage(project.id) || coverImages[project.id]) : promo.coverImageUrl;
                     return (
@@ -832,14 +781,7 @@ const Dashboard = () => {
                         <div className="p-4">
                           <h4 className="font-semibold text-sm mb-2 line-clamp-1">{promo.blogTitle}</h4>
 
-                          {/* Tags */}
-                          <div className="flex flex-wrap gap-1 mb-3">
-                            {promo.tags.map(tag => (
-                              <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-blue-600/10 text-blue-700 font-medium">
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
+                          {/* Tags display removed */}
 
                           {/* Status + Remove */}
                           <div className="flex items-center justify-between">
@@ -847,15 +789,30 @@ const Dashboard = () => {
                               {promo.status === 'ACTIVE' ? '● Live' : promo.status}
                             </span>
                             <button
-                              onClick={async () => {
+                              type="button"
+                              onClick={async (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                console.log("[Dashboard] Remove button clicked for promotion ID:", promo.id);
+                                if (!window.confirm(`Are you sure you want to remove this promotion?\nTitle: ${promo.blogTitle}`)) {
+                                  console.log("[Dashboard] Removal cancelled by user.");
+                                  return;
+                                }
+                                console.log("[Dashboard] Proceeding with removal...");
                                 const ok = await removePromotion(promo.id);
-                                if (ok) toast.success("Promotion removed.");
-                                else toast.error("Failed to remove promotion.");
+                                if (ok) {
+                                  console.log("[Dashboard] Promotion removal successful.");
+                                  toast.success("Promotion removed.");
+                                } else {
+                                  console.error("[Dashboard] Promotion removal failed.");
+                                  toast.error("Failed to remove promotion.");
+                                }
                               }}
-                              className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                              className="p-2 rounded-lg bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all shadow-sm border border-red-100 flex items-center gap-1.5"
                               title="Remove promotion"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span className="text-[10px] font-bold">Remove</span>
                             </button>
                           </div>
                         </div>
@@ -872,7 +829,7 @@ const Dashboard = () => {
                   <p className="text-sm text-muted-foreground mb-4 max-w-sm mx-auto">
                     Add your projects here to promote them in other users' blogs under "More Like This" sections.
                   </p>
-                  <Button onClick={() => setPromoteOpen(true)} className="gap-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white">
+                  <Button onClick={() => setPromoteOpen(true)} className="gap-1.5 shadow-sm">
                     <Plus className="w-4 h-4" />
                     Promote Your First Project
                   </Button>

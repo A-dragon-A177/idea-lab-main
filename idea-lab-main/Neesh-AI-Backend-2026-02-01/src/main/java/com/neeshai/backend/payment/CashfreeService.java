@@ -23,6 +23,9 @@ public class CashfreeService {
     @Value("${cashfree.api.url}")
     private String apiUrl;
 
+    @Value("${cashfree.return.url:http://localhost:8081/dashboard?order_id={order_id}}")
+    private String returnUrl;
+
     private final RestTemplate restTemplate;
 
     public CashfreeService() {
@@ -43,7 +46,7 @@ public class CashfreeService {
                         .customer_phone("9999999999") // Required by Cashfree, could be dummy if not available
                         .build())
                 .order_meta(CashfreeOrderRequest.OrderMeta.builder()
-                        .return_url("http://localhost:8080/dashboard?order_id={order_id}")
+                        .return_url(returnUrl)
                         .build())
                 .build();
 

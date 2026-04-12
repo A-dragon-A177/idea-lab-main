@@ -47,16 +47,12 @@ export const useAuth = () => {
 
     // THEN check for existing session
     console.log('[Auth] Checking for existing session...');
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (error) {
-        console.error('[Auth] Error getting session:', error);
-      } else {
-        console.log('[Auth] Existing session check:', {
-          hasSession: !!session,
-          userId: session?.user?.id,
-          email: session?.user?.email
-        });
-      }
+    apiClient.safeGetSession().then((session) => {
+      console.log('[Auth] Existing session check:', {
+        hasSession: !!session,
+        userId: session?.user?.id,
+        email: session?.user?.email
+      });
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -142,18 +138,26 @@ export const useAuth = () => {
 
   const signOut = async () => {
     console.log('[Auth] signOut called');
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error('[Auth] signOut error:', error);
-    } else {
-      console.log('[Auth] signOut successful');
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('[Auth] signOut error:', error);
+      } else {
+        console.log('[Auth] signOut successful');
+      }
+      return { error };
+    } catch (err) {
+      console.error('[Auth] signOut exception (likely lock contention):', err);
+      // Even if it fails, we clear state locally
+      setSession(null);
+      setUser(null);
+      return { error: null };
     }
-    return { error };
   };
 
   // Helper to get current access token
   const getAccessToken = async (): Promise<string | null> => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const session = await apiClient.safeGetSession();
     const token = session?.access_token ?? null;
     console.log('[Auth] getAccessToken:', token ? 'Token exists' : 'No token');
     return token;

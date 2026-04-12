@@ -67,7 +67,8 @@ export class EmbeddingService {
                 content: {
                     parts: [{ text: text.substring(0, 2048) }] // Limit text length for embedding
                 }
-            })
+            }),
+            signal: AbortSignal.timeout(15000) // 15s timeout
         });
 
         if (!response.ok) {
@@ -111,7 +112,8 @@ export class EmbeddingService {
                     const response = await fetch(url, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ requests })
+                        body: JSON.stringify({ requests }),
+                        signal: AbortSignal.timeout(15000) // 15s timeout
                     });
 
                     if (response.ok) {
@@ -144,9 +146,9 @@ export class EmbeddingService {
                 throw new Error(`Failed to generate embeddings after ${maxRetries} retries.`);
             }
 
-            // 20s delay between batches (Extremely safe)
+            // 2s delay between batches for rate limiting
             if (i + batchSize < texts.length) {
-                await new Promise(resolve => setTimeout(resolve, 20000));
+                await new Promise(resolve => setTimeout(resolve, 2000));
             }
         }
 

@@ -50,7 +50,11 @@ public class ProjectController {
                     request.title(),
                     request.oneLineSummary(),
                     "",
-                    request.description());
+                    request.description(),
+                    request.chatbotName(),
+                    request.welcomeMessage(),
+                    request.primaryColor(),
+                    request.botAvatarUrl());
         }
 
         Project project = projectService.createProject(ownerId, processedRequest);

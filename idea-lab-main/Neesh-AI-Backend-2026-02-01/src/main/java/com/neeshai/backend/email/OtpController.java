@@ -86,6 +86,17 @@ public class OtpController {
             return ResponseEntity.badRequest().body(new OtpResponse(false, "Invalid purpose."));
         }
 
+        // For FORGOT_PASSWORD, verify without consuming so the OTP remains
+        // available for the subsequent /reset-password call which also verifies it.
+        if (purpose == OtpPurpose.FORGOT_PASSWORD) {
+            boolean verified = otpService.verifyWithoutConsuming(request.email(), request.otp(), purpose);
+            if (verified) {
+                return ResponseEntity.ok(new OtpResponse(true, "OTP verified successfully."));
+            } else {
+                return ResponseEntity.ok(new OtpResponse(false, "Invalid or expired OTP. Please try again."));
+            }
+        }
+
         OtpResult result = otpService.verify(request.email(), request.otp(), purpose);
         return ResponseEntity.ok(new OtpResponse(result.isSuccess(), result.getMessage()));
     }
@@ -140,6 +151,10 @@ public class OtpController {
         // Step 1: Find user by email using Supabase Admin API
         HttpClient client = HttpClient.newHttpClient();
 
+        log.info("Supabase URL: {}, Service role key present: {}, key length: {}",
+                supabaseUrl, supabaseServiceRoleKey != null && !supabaseServiceRoleKey.isBlank(),
+                supabaseServiceRoleKey != null ? supabaseServiceRoleKey.length() : 0);
+
         // List users filtered by email
         String listUrl = supabaseUrl + "/auth/v1/admin/users?filter=" +
                 java.net.URLEncoder.encode(email, "UTF-8");
@@ -152,7 +167,12 @@ public class OtpController {
                 .build();
 
         HttpResponse<String> listResponse = client.send(listRequest, HttpResponse.BodyHandlers.ofString());
-        log.debug("Supabase list users response: {}", listResponse.body());
+        log.info("Supabase list users response status: {}, body: {}", listResponse.statusCode(), listResponse.body());
+
+        if (listResponse.statusCode() != 200) {
+            throw new RuntimeException("Supabase admin API returned " + listResponse.statusCode() +
+                    ": " + listResponse.body() + " — ensure SUPABASE_SERVICE_ROLE_KEY is the service_role key, not the anon key.");
+        }
 
         // Parse the user ID from the response
         String responseBody = listResponse.body();

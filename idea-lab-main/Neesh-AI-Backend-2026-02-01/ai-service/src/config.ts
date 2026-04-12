@@ -1,0 +1,6 @@
+export const CONFIG = {
+  SIMILARITY_THRESHOLD: 0.10,
+  TOP_K: 5,
+  MAX_CONTEXT_CHUNKS: 3,
+  MAX_HISTORY: 2
+};

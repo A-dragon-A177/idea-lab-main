@@ -1,9 +1,16 @@
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import { useInView } from "../../hooks/useScrollProgress";
 
 const NAV_LINKS = {
-  Product: ["Features", "Pricing", "Changelog", "Roadmap"],
-  Resources: ["Docs", "Blog", "API Reference", "Guides"],
+  Product: [
+    { label: "Features", to: "/features" },
+    { label: "Simulation", to: "/simulation" },
+    { label: "Pricing", to: "/pricing" },
+  ],
+  Resources: [
+    { label: "Blog", to: "/blog-info" },
+  ],
 };
 
 export default function FooterSection() {
@@ -49,13 +56,13 @@ export default function FooterSection() {
               <div className="text-gray-950 text-xs font-bold tracking-widest uppercase mb-4">{category}</div>
               <ul className="space-y-2.5">
                 {links.map((link) => (
-                  <li key={link}>
-                    <a
-                      href={`#${link.toLowerCase().replace(/\s+/g, "-")}`}
+                  <li key={link.label}>
+                    <Link
+                      to={link.to}
                       className="text-gray-500 text-sm hover:text-gray-800 transition-colors duration-200 font-medium"
                     >
-                      {link}
-                    </a>
+                      {link.label}
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -88,3 +95,4 @@ export default function FooterSection() {
     </footer>
   );
 }
+
