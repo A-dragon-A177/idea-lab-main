@@ -3,6 +3,7 @@ services:
   - type: web
     name: neesh-ai-backend
     env: docker
+    plan: free
     rootDir: ./idea-lab-main/Neesh-AI-Backend-2026-02-01
     dockerfilePath: Dockerfile
     envVars:
@@ -29,6 +30,7 @@ services:
   - type: web
     name: neesh-ai-service
     env: node
+    plan: free
     rootDir: ./idea-lab-main/Neesh-AI-Backend-2026-02-01/ai-service
     buildCommand: npm install
     startCommand: npm start
