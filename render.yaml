@@ -25,6 +25,10 @@ services:
         sync: false
       - key: RESEND_API_KEY
         sync: false
+      - key: CASHFREE_APP_ID
+        sync: false
+      - key: CASHFREE_SECRET_KEY
+        sync: false
 
   # 2. The Node.js AI Service
   - type: web
