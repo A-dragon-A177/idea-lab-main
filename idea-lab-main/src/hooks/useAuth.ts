@@ -9,7 +9,15 @@ export const useAuth = () => {
   const [loading, setLoading] = useState(true);
 
   // Sync user with backend after authentication
+  // Only runs when we have a confirmed session with an access token
   const syncWithBackend = async () => {
+    // Double-check we actually have a session before making the request
+    const currentSession = await apiClient.safeGetSession();
+    if (!currentSession?.access_token) {
+      console.log('[Auth] Skipping backend sync - no active session (guest user)');
+      return;
+    }
+
     try {
       console.log('[Auth] Syncing user with backend...');
       await apiClient.get('/api/users/me');
@@ -38,8 +46,8 @@ export const useAuth = () => {
         setUser(session?.user ?? null);
         setLoading(false);
 
-        // Sync with backend on sign in
-        if (event === 'SIGNED_IN' && session) {
+        // Sync with backend on sign in - only if we have a real session
+        if (event === 'SIGNED_IN' && session?.access_token) {
           setTimeout(() => syncWithBackend(), 0);
         }
       }

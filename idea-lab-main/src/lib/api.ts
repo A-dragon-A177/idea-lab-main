@@ -64,10 +64,17 @@ class ApiClient {
         return headers;
     }
 
-    private async handleResponse<T>(response: Response): Promise<T> {
+    private async handleResponse<T>(response: Response, skipAuth?: boolean): Promise<T> {
         const timestamp = new Date().toISOString();
 
         if (response.status === 401) {
+            // If this was a public/skipAuth request, do NOT redirect to login.
+            // Guest users hitting public endpoints should never be forced to log in.
+            if (skipAuth) {
+                console.warn(`[API ${timestamp}] 401 on public request - ignoring (guest user)`);
+                throw new Error('Authentication required for this resource.');
+            }
+
             console.error(`[API ${timestamp}] 401 Unauthorized - Session expired or invalid`);
             
             // Perform signOut safely - don't let a lock timeout here block the failure
@@ -85,7 +92,7 @@ class ApiClient {
                 console.warn('[API] signOut failed:', e);
             }
 
-            // Still redirect to login
+            // Only redirect to login for authenticated requests that failed
             window.location.href = '/login';
             throw new Error('Session expired. Please log in again.');
         }
@@ -124,7 +131,7 @@ class ApiClient {
         });
 
         console.log(`[API ${timestamp}] 🔵 GET Response - Status: ${response.status} ${response.statusText}`);
-        return this.handleResponse<T>(response);
+        return this.handleResponse<T>(response, config?.skipAuth);
     }
 
     async post<T>(endpoint: string, data?: unknown, config?: RequestConfig): Promise<T> {
@@ -144,7 +151,7 @@ class ApiClient {
         });
 
         console.log(`[API ${timestamp}] 🟢 POST Response - Status: ${response.status} ${response.statusText}`);
-        return this.handleResponse<T>(response);
+        return this.handleResponse<T>(response, config?.skipAuth);
     }
 
     async put<T>(endpoint: string, data?: unknown, config?: RequestConfig): Promise<T> {
@@ -164,7 +171,7 @@ class ApiClient {
         });
 
         console.log(`[API ${timestamp}] 🟡 PUT Response - Status: ${response.status} ${response.statusText}`);
-        return this.handleResponse<T>(response);
+        return this.handleResponse<T>(response, config?.skipAuth);
     }
 
     async delete<T>(endpoint: string, config?: RequestConfig): Promise<T> {
@@ -182,7 +189,7 @@ class ApiClient {
         });
 
         console.log(`[API ${timestamp}] 🔴 DELETE Response - Status: ${response.status} ${response.statusText}`);
-        return this.handleResponse<T>(response);
+        return this.handleResponse<T>(response, config?.skipAuth);
     }
 
     // Special method for file uploads (multipart/form-data)
