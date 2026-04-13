@@ -1,0 +1,46 @@
+services:
+  # 1. The Spring Boot Backend
+  - type: web
+    name: neesh-ai-backend
+    env: docker
+    dockerfilePath: ./Neesh-AI-Backend-2026-02-01/Dockerfile
+    envVars:
+      - key: AI_SERVICE_URL
+        value: https://neesh-ai-service.onrender.com
+      - key: AI_SERVICE_INTERNAL_API_KEY
+        value: neesh-ai-secret-key-123
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SPRING_DATASOURCE_URL
+        sync: false
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+
+  # 2. The Node.js AI Service
+  - type: web
+    name: neesh-ai-service
+    env: node
+    rootDir: ./Neesh-AI-Backend-2026-02-01/ai-service
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: INTERNAL_API_KEY
+        value: neesh-ai-secret-key-123
+      - key: DEFAULT_LLM_PROVIDER
+        value: GEMINI
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
