@@ -32,7 +32,7 @@ services:
     env: node
     plan: free
     rootDir: ./idea-lab-main/Neesh-AI-Backend-2026-02-01/ai-service
-    buildCommand: npm install
+    buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
       - key: NODE_VERSION
