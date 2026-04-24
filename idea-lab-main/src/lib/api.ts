@@ -17,34 +17,43 @@ class ApiClient {
         this.baseUrl = baseUrl;
     }
 
+    private sessionPromise: Promise<Session | null> | null = null;
+
     public async safeGetSession() {
-        try {
-            const { data: { session }, error } = await supabase.auth.getSession();
-            if (error) throw error;
-            return session;
-        } catch (err) {
-            console.warn('[API] getSession failed (timeout or error), attempting localStorage fallback:', err);
+        if (this.sessionPromise) return this.sessionPromise;
+
+        this.sessionPromise = (async () => {
             try {
-                // Manually search localStorage for the Supabase auth token
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
-                        const stored = localStorage.getItem(key);
-                        if (stored) {
-                            const parsed = JSON.parse(stored);
-                            if (parsed?.access_token) {
-                                console.log('[API] Session recovered from localStorage');
-                                // Return partial session object containing the token
-                                return { access_token: parsed.access_token } as any;
+                const { data: { session }, error } = await supabase.auth.getSession();
+                if (error) throw error;
+                return session;
+            } catch (err) {
+                console.warn('[API] getSession failed, attempting localStorage fallback:', err);
+                try {
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
+                            const stored = localStorage.getItem(key);
+                            if (stored) {
+                                const parsed = JSON.parse(stored);
+                                if (parsed?.access_token) {
+                                    return { access_token: parsed.access_token } as any;
+                                }
                             }
                         }
                     }
+                } catch (fallbackErr) {
+                    console.error('[API] LocalStorage fallback failed:', fallbackErr);
                 }
-            } catch (fallbackErr) {
-                console.error('[API] LocalStorage fallback failed:', fallbackErr);
+                return null;
+            } finally {
+                // Clear the promise after a short delay to allow fresh checks later
+                // but keep it long enough to deduplicate concurrent bursts
+                setTimeout(() => { this.sessionPromise = null; }, 1000);
             }
-            return null;
-        }
+        })();
+
+        return this.sessionPromise;
     }
 
     private async getAuthHeaders(): Promise<HeadersInit> {

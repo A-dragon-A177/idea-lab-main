@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import { Loader2 } from "lucide-react";
+import { AuthProvider } from "./contexts/AuthContext";
 
 // Eagerly load critical pages
 import Index from "./pages/Index";
@@ -42,33 +43,35 @@ const PageLoader = () => (
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Suspense fallback={<PageLoader />}>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/features" element={<FeaturesPage />} />
-            <Route path="/blog-info" element={<BlogInfoPage />} />
-            <Route path="/simulation" element={<SimulationPage />} />
-            <Route path="/pricing" element={<PricingPage />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/project/:id" element={<Project />} />
-            <Route path="/project/:id/preview" element={<BlogPreview />} />
-            <Route path="/project/:id/feedback" element={<FeedbackBuilder />} />
-            <Route path="/project/:id/chatbot" element={<Chatbot />} />
-            <Route path="/p/:slugWithId" element={<PublicBlog />} />
-            <Route path="/profile" element={<ProfileSettings />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/features" element={<FeaturesPage />} />
+              <Route path="/blog-info" element={<BlogInfoPage />} />
+              <Route path="/simulation" element={<SimulationPage />} />
+              <Route path="/pricing" element={<PricingPage />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/project/:id" element={<Project />} />
+              <Route path="/project/:id/preview" element={<BlogPreview />} />
+              <Route path="/project/:id/feedback" element={<FeedbackBuilder />} />
+              <Route path="/project/:id/chatbot" element={<Chatbot />} />
+              <Route path="/p/:slugWithId" element={<PublicBlog />} />
+              <Route path="/profile" element={<ProfileSettings />} />
+              <Route path="/admin" element={<AdminDashboard />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

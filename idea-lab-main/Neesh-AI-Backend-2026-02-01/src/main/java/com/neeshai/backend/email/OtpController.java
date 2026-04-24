@@ -60,6 +60,12 @@ public class OtpController {
             return ResponseEntity.badRequest().body(new OtpResponse(false, "Invalid purpose. Use SIGNUP or FORGOT_PASSWORD."));
         }
 
+        if (purpose == OtpPurpose.SIGNUP) {
+            if (isUserAlreadyRegistered(request.email())) {
+                return ResponseEntity.badRequest().body(new OtpResponse(false, "This email is already registered. Please sign in instead."));
+            }
+        }
+
         OtpResult result = otpService.generateAndSend(request.email(), purpose);
         if (result.isSuccess()) {
             return ResponseEntity.ok(new OtpResponse(true, result.getMessage()));
@@ -228,6 +234,38 @@ public class OtpController {
             log.error("Failed to parse Supabase user list response: {}", e.getMessage());
         }
         return null;
+    }
+
+    private boolean isUserAlreadyRegistered(String email) {
+        if (supabaseUrl == null || supabaseUrl.isBlank() ||
+            supabaseServiceRoleKey == null || supabaseServiceRoleKey.isBlank()) {
+            log.warn("Supabase credentials missing; skipping registration check.");
+            return false;
+        }
+
+        try {
+            HttpClient client = HttpClient.newHttpClient();
+            String listUrl = supabaseUrl + "/auth/v1/admin/users?filter=" +
+                    java.net.URLEncoder.encode(email, "UTF-8");
+
+            HttpRequest listRequest = HttpRequest.newBuilder()
+                    .uri(URI.create(listUrl))
+                    .header("Authorization", "Bearer " + supabaseServiceRoleKey)
+                    .header("apikey", supabaseServiceRoleKey)
+                    .GET()
+                    .build();
+
+            HttpResponse<String> listResponse = client.send(listRequest, HttpResponse.BodyHandlers.ofString());
+            if (listResponse.statusCode() == 200) {
+                String userId = extractUserIdByEmail(listResponse.body(), email);
+                return userId != null;
+            } else {
+                log.warn("Supabase admin API returned {} during registration check", listResponse.statusCode());
+            }
+        } catch (Exception e) {
+            log.error("Failed to check if user exists in Supabase: {}", e.getMessage());
+        }
+        return false;
     }
 
     private String escapeJson(String value) {

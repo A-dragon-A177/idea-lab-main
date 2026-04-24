@@ -139,25 +139,38 @@ const Dashboard = () => {
     if (!projects?.length) return;
 
     const fetchMissingCoverImages = async () => {
-      const updates: Record<string, string> = {};
-      for (const project of projects) {
-        // Skip if already in localStorage
-        if (getProjectCoverImage(project.id)) continue;
-        try {
-          const blogData = await apiClient.get<{ coverImageUrl?: string }>(
-            `/api/projects/${project.id}/blog`
-          );
-          if (blogData?.coverImageUrl) {
-            updates[project.id] = blogData.coverImageUrl;
-            // Cache in localStorage for future use
-            localStorage.setItem(`cover-image-${project.id}`, blogData.coverImageUrl);
+      console.log("[Dashboard] Checking for missing cover images...");
+      const missingProjects = projects.filter(p => !getProjectCoverImage(p.id));
+      
+      if (missingProjects.length === 0) return;
+
+      try {
+        const results = await Promise.all(
+          missingProjects.map(async (project) => {
+            try {
+              const blogData = await apiClient.get<{ coverImageUrl?: string }>(
+                `/api/projects/${project.id}/blog`
+              );
+              return { id: project.id, url: blogData?.coverImageUrl || null };
+            } catch {
+              return { id: project.id, url: null };
+            }
+          })
+        );
+
+        const updates: Record<string, string> = {};
+        results.forEach(result => {
+          if (result.url) {
+            updates[result.id] = result.url;
+            localStorage.setItem(`cover-image-${result.id}`, result.url);
           }
-        } catch {
-          // Blog not found or error — skip
+        });
+
+        if (Object.keys(updates).length > 0) {
+          setCoverImages(prev => ({ ...prev, ...updates }));
         }
-      }
-      if (Object.keys(updates).length > 0) {
-        setCoverImages(prev => ({ ...prev, ...updates }));
+      } catch (error) {
+        console.error("[Dashboard] Error fetching cover images:", error);
       }
     };
 
