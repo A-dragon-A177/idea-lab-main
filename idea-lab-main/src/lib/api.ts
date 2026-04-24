@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 const BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8081';
+const IS_DEV = import.meta.env.DEV;
 
 interface RequestConfig extends RequestInit {
     skipAuth?: boolean;
@@ -57,7 +58,7 @@ class ApiClient {
     }
 
     private async getAuthHeaders(): Promise<HeadersInit> {
-        console.log('[API] Getting auth headers...');
+        if (IS_DEV) console.log('[API] Getting auth headers...');
         const headers: HeadersInit = {
             'Content-Type': 'application/json',
         };
@@ -65,7 +66,7 @@ class ApiClient {
         const session = await this.safeGetSession();
         if (session?.access_token) {
             headers['Authorization'] = `Bearer ${session.access_token}`;
-            console.log('[API] Token found, length:', session.access_token.length);
+            if (IS_DEV) console.log('[API] Token found, length:', session.access_token.length);
         } else {
             console.warn('[API] No session/token available');
         }
@@ -115,12 +116,12 @@ class ApiClient {
 
         // Handle empty responses (204 No Content)
         if (response.status === 204) {
-            console.log(`[API ${timestamp}] 204 No Content - Empty response`);
+            if (IS_DEV) console.log(`[API ${timestamp}] 204 No Content - Empty response`);
             return {} as T;
         }
 
         const data = await response.json();
-        console.log(`[API ${timestamp}] Response data received`, typeof data === 'object' ? `(${Object.keys(data).length} keys)` : '');
+        if (IS_DEV) console.log(`[API ${timestamp}] Response data received`, typeof data === 'object' ? `(${Object.keys(data).length} keys)` : '');
         return data;
     }
 
@@ -129,9 +130,11 @@ class ApiClient {
         const fullUrl = `${this.baseUrl}${endpoint}`;
         const timestamp = new Date().toISOString();
 
-        console.log(`[API ${timestamp}] 🔵 GET Request`);
-        console.log(`  URL: ${fullUrl}`);
-        console.log(`  Auth: ${config?.skipAuth ? 'No' : 'Yes'}`);
+        if (IS_DEV) {
+            console.log(`[API ${timestamp}] 🔵 GET Request`);
+            console.log(`  URL: ${fullUrl}`);
+            console.log(`  Auth: ${config?.skipAuth ? 'No' : 'Yes'}`);
+        }
 
         const response = await fetch(fullUrl, {
             method: 'GET',
@@ -139,7 +142,7 @@ class ApiClient {
             ...config,
         });
 
-        console.log(`[API ${timestamp}] 🔵 GET Response - Status: ${response.status} ${response.statusText}`);
+        if (IS_DEV) console.log(`[API ${timestamp}] 🔵 GET Response - Status: ${response.status} ${response.statusText}`);
         return this.handleResponse<T>(response, config?.skipAuth);
     }
 
@@ -148,9 +151,11 @@ class ApiClient {
         const fullUrl = `${this.baseUrl}${endpoint}`;
         const timestamp = new Date().toISOString();
 
-        console.log(`[API ${timestamp}] 🟢 POST Request`);
-        console.log(`  URL: ${fullUrl}`);
-        console.log(`  Body:`, data);
+        if (IS_DEV) {
+            console.log(`[API ${timestamp}] 🟢 POST Request`);
+            console.log(`  URL: ${fullUrl}`);
+            console.log(`  Body:`, data);
+        }
 
         const response = await fetch(fullUrl, {
             method: 'POST',
@@ -159,7 +164,7 @@ class ApiClient {
             ...config,
         });
 
-        console.log(`[API ${timestamp}] 🟢 POST Response - Status: ${response.status} ${response.statusText}`);
+        if (IS_DEV) console.log(`[API ${timestamp}] 🟢 POST Response - Status: ${response.status} ${response.statusText}`);
         return this.handleResponse<T>(response, config?.skipAuth);
     }
 
@@ -168,9 +173,11 @@ class ApiClient {
         const fullUrl = `${this.baseUrl}${endpoint}`;
         const timestamp = new Date().toISOString();
 
-        console.log(`[API ${timestamp}] 🟡 PUT Request`);
-        console.log(`  URL: ${fullUrl}`);
-        console.log(`  Body:`, data);
+        if (IS_DEV) {
+            console.log(`[API ${timestamp}] 🟡 PUT Request`);
+            console.log(`  URL: ${fullUrl}`);
+            console.log(`  Body:`, data);
+        }
 
         const response = await fetch(fullUrl, {
             method: 'PUT',
@@ -179,7 +186,7 @@ class ApiClient {
             ...config,
         });
 
-        console.log(`[API ${timestamp}] 🟡 PUT Response - Status: ${response.status} ${response.statusText}`);
+        if (IS_DEV) console.log(`[API ${timestamp}] 🟡 PUT Response - Status: ${response.status} ${response.statusText}`);
         return this.handleResponse<T>(response, config?.skipAuth);
     }
 
@@ -188,8 +195,10 @@ class ApiClient {
         const fullUrl = `${this.baseUrl}${endpoint}`;
         const timestamp = new Date().toISOString();
 
-        console.log(`[API ${timestamp}] 🔴 DELETE Request`);
-        console.log(`  URL: ${fullUrl}`);
+        if (IS_DEV) {
+            console.log(`[API ${timestamp}] 🔴 DELETE Request`);
+            console.log(`  URL: ${fullUrl}`);
+        }
 
         const response = await fetch(fullUrl, {
             method: 'DELETE',
@@ -197,7 +206,7 @@ class ApiClient {
             ...config,
         });
 
-        console.log(`[API ${timestamp}] 🔴 DELETE Response - Status: ${response.status} ${response.statusText}`);
+        if (IS_DEV) console.log(`[API ${timestamp}] 🔴 DELETE Response - Status: ${response.status} ${response.statusText}`);
         return this.handleResponse<T>(response, config?.skipAuth);
     }
 

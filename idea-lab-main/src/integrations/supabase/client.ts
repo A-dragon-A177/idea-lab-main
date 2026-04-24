@@ -27,7 +27,7 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
-    debug: true, // Enable Supabase's internal auth debugging
+    debug: false,
   }
 });
 

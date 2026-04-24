@@ -7,6 +7,11 @@
  *
  * Regular browser users are never routed here — only bots (via vercel.json
  * conditional rewrite on User-Agent header).
+ *
+ * OG Tags returned:
+ *   - og:title       → Project title (from project data)
+ *   - og:description → Project one-line summary (NOT blog body content)
+ *   - og:image       → Blog cover image URL
  */
 
 export default async function handler(req, res) {
@@ -29,32 +34,44 @@ export default async function handler(req, res) {
     const projectId = uuidMatch[1];
     const backendUrl = process.env.VITE_BACKEND_URL || 'https://neesh-ai.onrender.com';
 
+    // Fetch both project data (for title + one-liner) and blog data (for cover image)
+    // in parallel for speed
     try {
-      const response = await fetch(`${backendUrl}/api/public/projects/${projectId}/blog`);
+      const [projectRes, blogRes] = await Promise.all([
+        fetch(`${backendUrl}/api/public/projects/${projectId}`).catch(() => null),
+        fetch(`${backendUrl}/api/public/projects/${projectId}/blog`).catch(() => null),
+      ]);
 
-      if (response.ok) {
-        const data = await response.json();
+      // Extract project data: title + oneLineSummary
+      if (projectRes && projectRes.ok) {
+        const projectData = await projectRes.json();
 
-        if (data.heading) {
-          title = data.heading;
+        if (projectData.title) {
+          title = projectData.title;
         }
 
-        // Strip HTML tags from introduction for a clean text description
-        if (data.introduction) {
-          description = data.introduction
-            .replace(/<[^>]*>/g, '')   // Remove HTML tags
-            .replace(/&nbsp;/g, ' ')   // Replace &nbsp;
-            .replace(/\s+/g, ' ')      // Collapse whitespace
-            .trim()
-            .substring(0, 200);
+        // Use oneLineSummary as the OG description (the user's short project tagline)
+        if (projectData.oneLineSummary) {
+          description = projectData.oneLineSummary;
+        }
+      }
+
+      // Extract blog data: cover image
+      if (blogRes && blogRes.ok) {
+        const blogData = await blogRes.json();
+
+        // Use blog heading as title if project title wasn't available
+        if (title === 'Neesh AI Blog' && blogData.heading) {
+          title = blogData.heading;
         }
 
-        if (data.coverImageUrl && data.coverImageUrl.length > 10) {
-          image = data.coverImageUrl;
+        // Cover image for the OG preview
+        if (blogData.coverImageUrl && blogData.coverImageUrl.length > 10) {
+          image = blogData.coverImageUrl;
         }
       }
     } catch (err) {
-      console.error('[OG] Failed to fetch blog data:', err.message);
+      console.error('[OG] Failed to fetch data:', err.message);
       // Continue with defaults — don't crash the response
     }
   }

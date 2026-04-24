@@ -146,10 +146,23 @@ public class ProjectService {
                 }).orElse(false);
     }
 
-    public Optional<Project> getPublicProject(String slug) {
-        return projectRepository.findBySlug(slug)
+    public Optional<Project> getPublicProject(String slugOrId) {
+        // Try UUID lookup first (used by OG tag generator and direct ID access)
+        try {
+            UUID id = UUID.fromString(slugOrId);
+            Optional<Project> byId = projectRepository.findById(id)
+                    .filter(p -> !p.isDeleted());
+            if (byId.isPresent()) {
+                return byId;
+            }
+        } catch (IllegalArgumentException ignored) {
+            // Not a UUID — fall through to slug lookup
+        }
+
+        // Slug-based lookup (original behavior)
+        return projectRepository.findBySlug(slugOrId)
                 .filter(p -> "PUBLISHED".equals(p.getStatus()))
-                .filter(p -> !p.isDeleted()); // Double check, though repo handles it
+                .filter(p -> !p.isDeleted());
     }
 
     // Deterministic Slug Resolution

@@ -779,7 +779,7 @@ const Dashboard = () => {
                         className="relative bg-card rounded-xl border border-blue-500/20 overflow-hidden group hover:shadow-lg transition-all"
                       >
                         {/* Cover */}
-                        <div className="h-32 overflow-hidden bg-gradient-to-br from-blue-600/10 via-indigo-600/10 to-muted">
+                        <div className="relative h-32 overflow-hidden bg-gradient-to-br from-blue-600/10 via-indigo-600/10 to-muted">
                           {coverImg ? (
                             <img src={coverImg} alt={promo.blogTitle} className="w-full h-full object-cover" loading="lazy" />
                           ) : (

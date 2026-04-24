@@ -77,6 +77,8 @@ const BlogPreview = ({ publicId }: BlogPreviewProps) => {
   const initialWelcomeMessage = blogData?.welcome_message || "Hello! 👋 I'm here to help answer any questions you have about this blog post. Feel free to ask me anything!";
   const [chatbotVisible, setChatbotVisible] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadStartTime] = useState(() => Date.now());
+  const [slowLoad, setSlowLoad] = useState(false);
   const [scrollY, setScrollY] = useState(0);
   const [readingProgress, setReadingProgress] = useState(0);
   const [coverImageBroken, setCoverImageBroken] = useState(false);
@@ -183,7 +185,15 @@ const BlogPreview = ({ publicId }: BlogPreviewProps) => {
   const chatbotSectionRef = useRef<HTMLDivElement>(null);
   const commentSectionRef = useRef<HTMLDivElement>(null);
 
-  // Fetch blog data from the database
+  // Show "taking longer than usual" after 5 seconds (Render cold start)
+  useEffect(() => {
+    if (!loading) return;
+    const timer = setTimeout(() => setSlowLoad(true), 5000);
+    return () => clearTimeout(timer);
+  }, [loading]);
+
+  // Fetch blog data from the database — only depends on `id`, NOT `coverImage`
+  // coverImage from localStorage is used as a fallback at render time, not as a trigger.
   useEffect(() => {
     const loadBlogData = async () => {
       if (!id) return;
@@ -267,7 +277,7 @@ const BlogPreview = ({ publicId }: BlogPreviewProps) => {
           console.log("Raw blog data:", blog);
           console.log("Constructed sections:", sections);
 
-          // Use DB image if available and non-empty, otherwise try localStorage
+          // Use DB image if available and non-empty, otherwise try localStorage fallback
           const dbCoverImage = blog?.cover_image_url && blog.cover_image_url.length > 10 ? blog.cover_image_url : null;
           const finalCoverImage = dbCoverImage || coverImage || undefined;
 
@@ -284,11 +294,13 @@ const BlogPreview = ({ publicId }: BlogPreviewProps) => {
         console.error("Error loading blog data:", err);
       } finally {
         setLoading(false);
+        setSlowLoad(false);
       }
     };
 
     loadBlogData();
-  }, [id, coverImage]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   // Fetch branding info for the blog
   useEffect(() => {
@@ -550,10 +562,41 @@ const BlogPreview = ({ publicId }: BlogPreviewProps) => {
   };
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading blog...</p>
+      <div className="min-h-screen bg-background">
+        {/* Skeleton Hero */}
+        <div className="relative h-[80vh] overflow-hidden bg-gradient-to-br from-primary/10 via-accent/5 to-background">
+          <div className="absolute inset-0">
+            <div className="absolute w-64 h-64 rounded-full bg-primary/10 blur-3xl animate-pulse" style={{ top: '10%', left: '20%' }} />
+            <div className="absolute w-48 h-48 rounded-full bg-accent/15 blur-3xl animate-pulse" style={{ top: '40%', right: '15%', animationDelay: '1s' }} />
+          </div>
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 p-8 md:p-16">
+            <div className="max-w-5xl mx-auto space-y-4">
+              <div className="h-12 w-3/4 bg-muted/50 rounded-xl animate-pulse" />
+              <div className="h-8 w-1/2 bg-muted/30 rounded-lg animate-pulse" style={{ animationDelay: '200ms' }} />
+            </div>
+          </div>
+        </div>
+
+        {/* Skeleton Content */}
+        <div className="max-w-5xl mx-auto px-6 py-16 space-y-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-card border border-border p-8 shadow-sm space-y-4" style={{ animationDelay: `${i * 150}ms` }}>
+              <div className="h-4 w-full bg-muted/40 rounded animate-pulse" />
+              <div className="h-4 w-5/6 bg-muted/30 rounded animate-pulse" style={{ animationDelay: '100ms' }} />
+              <div className="h-4 w-4/6 bg-muted/20 rounded animate-pulse" style={{ animationDelay: '200ms' }} />
+            </div>
+          ))}
+        </div>
+
+        {/* Centered loading indicator */}
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
+          <div className="flex items-center gap-3 px-5 py-3 rounded-full bg-card/90 backdrop-blur-xl border border-border/50 shadow-lg">
+            <Loader2 className="w-4 h-4 animate-spin text-primary" />
+            <span className="text-sm text-muted-foreground">
+              {slowLoad ? 'Almost there — waking up the servers...' : 'Loading blog...'}
+            </span>
+          </div>
         </div>
       </div>
     );

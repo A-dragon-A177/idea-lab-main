@@ -42,6 +42,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     console.log('[AuthContext] Initializing provider...');
 
+    // For public blog routes, skip auth initialization entirely — audience visitors
+    // don't have sessions, so calling getSession() is wasted work that delays rendering.
+    const isPublicBlogRoute = window.location.pathname.startsWith('/p/');
+    if (isPublicBlogRoute) {
+      console.log('[AuthContext] Public blog route detected — skipping auth init');
+      setLoading(false);
+      return;
+    }
+
     // 1. Check for initial session
     const initializeAuth = async () => {
       try {
