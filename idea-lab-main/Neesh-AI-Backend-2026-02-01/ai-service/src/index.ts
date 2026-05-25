@@ -25,28 +25,6 @@ app.get('/health', (_req, res) => {
     res.json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() });
 });
 
-// ─── Rate Limiting ──────────────────────────────────────────────
-import rateLimit from 'express-rate-limit';
-
-// Global rate limit: 200 requests per minute per IP
-const globalLimiter = rateLimit({
-    windowMs: 60 * 1000,
-    max: 200,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { error: 'Too many requests, please try again later.' }
-});
-app.use(globalLimiter);
-
-// Chat-specific rate limit: 15 requests per minute per IP (LLM calls are expensive)
-const chatLimiter = rateLimit({
-    windowMs: 60 * 1000,
-    max: 15,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { error: 'Chat rate limit exceeded. Please wait a moment before asking another question.' }
-});
-
 // Apply Security Middleware to all /internal routes
 import { requireInternalAuth } from './middleware/auth';
 app.use('/internal', requireInternalAuth);
@@ -57,7 +35,7 @@ const chatController = new ChatController();
 // Internal API routes
 app.post('/internal/ingest/:projectId', (req, res) => chatController.ingestProject(req, res));
 app.post('/internal/query', (req, res) => chatController.queryVectorStore(req, res));
-app.post('/internal/chat', chatLimiter, (req, res) => chatController.chatWithProject(req, res));
+app.post('/internal/chat', (req, res) => chatController.chatWithProject(req, res));
 
 // Learning Loop Routes
 import { LearningController } from './controllers/LearningController';

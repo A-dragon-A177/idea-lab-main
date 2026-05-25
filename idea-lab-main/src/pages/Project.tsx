@@ -359,8 +359,8 @@ const Project = () => {
       toast.error("Please upload a valid video file.");
       return;
     }
-    if (file.size > 25 * 1024 * 1024) {
-      toast.error("Video too large. Please upload a video under 25MB.");
+    if (file.size > 100 * 1024 * 1024) {
+      toast.error("Video too large. Please upload a video under 100MB.");
       return;
     }
 
@@ -1054,7 +1054,7 @@ const Project = () => {
                         >
                           <Video className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                           <p className="text-sm text-muted-foreground">
-                            Click to upload a video (max 25MB)
+                            Click to upload a video (max 100MB)
                           </p>
                         </label>
                       )}
