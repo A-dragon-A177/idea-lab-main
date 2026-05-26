@@ -36,15 +36,8 @@ export const useDocuments = (projectId: string | undefined) => {
       setLoading(true);
       setError(null);
 
-      const { data, error: fetchError } = await supabase
-        .from("documents")
-        .select("*")
-        .eq("project_id", projectId)
-        .eq("is_active", true)
-        .order("created_at", { ascending: false });
-
-      if (fetchError) throw fetchError;
-      setDocuments((data as Document[]) || []);
+      const data = await apiClient.get<Document[]>(`/api/documents/project/${projectId}`);
+      setDocuments(data || []);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to fetch documents";
       setError(message);

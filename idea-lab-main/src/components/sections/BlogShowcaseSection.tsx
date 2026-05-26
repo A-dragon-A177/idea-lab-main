@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useInView } from "../../hooks/useScrollProgress";
 import { ScrollTrigger } from "../../lib/gsap";
+import defaultChatbotAvatar from "../../assets/chatbot-avatar.png";
 
 const STEPS = [
   {
@@ -229,7 +230,7 @@ function BlogPreviewTab({ active }: { active: boolean }) {
             >
               <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100 bg-[#09daed]/5">
                 <div className="flex items-center gap-2">
-                  <img src="/neesh-logo.png" alt="AI" className="w-4 h-4 object-contain" />
+                  <img src={defaultChatbotAvatar} alt="AI" className="w-6 h-6 object-contain drop-shadow-sm" />
                   <span className="text-xs font-bold text-gray-800">Neesh AI Bot</span>
                 </div>
                 <button

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useParams, useNavigate, useSearchParams } from "react-router-dom";
+import defaultChatbotAvatar from "@/assets/chatbot-avatar.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -1226,8 +1227,7 @@ const Project = () => {
               </div>
 
               {/* Document Library */}
-              {documents.length > 0 && (
-                <div className="bg-card rounded-2xl border border-border/30 p-6 shadow-card">
+              <div className="bg-card rounded-2xl border border-border/30 p-6 shadow-card">
                   <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
@@ -1235,7 +1235,7 @@ const Project = () => {
                       </div>
                       <div>
                         <h3 className="font-display font-semibold text-lg">Knowledge Base Files</h3>
-                        <p className="text-sm text-muted-foreground">{documents.length} folders available</p>
+                        <p className="text-sm text-muted-foreground">{documents.length} files available</p>
                       </div>
                     </div>
                   </div>
@@ -1288,11 +1288,13 @@ const Project = () => {
 
                           <div className="flex flex-col gap-1 text-xs text-muted-foreground">
                             <div className="flex items-center gap-2">
-                              <span className="font-medium text-primary bg-primary/10 px-2 py-0.5 rounded text-[10px] uppercase">
-                                {doc.mime_type?.split('/')[1] || "FILE"}
+                              <span 
+                                className="font-medium text-primary bg-primary/10 px-2 py-0.5 rounded text-[10px] uppercase truncate max-w-[130px] inline-block"
+                                title={doc.mime_type || "FILE"}
+                              >
+                                {doc.mime_type?.includes('wordprocessingml') ? 'DOCX' : doc.mime_type?.split('/')[1] || "FILE"}
                               </span>
-                              <span>v{doc.version || 1}</span>
-
+                              <span className="flex-shrink-0">v{doc.version || 1}</span>
                             </div>
                             <div className="flex items-center gap-1.5 mt-1">
                               <Calendar className="w-3 h-3" />
@@ -1306,15 +1308,14 @@ const Project = () => {
                     ))}
                   </div>
                 </div>
-              )}
-            </div>
-          )}
+              </div>
+            )}
 
           {activeTab === "chatbot" && (
             <div className="max-w-4xl mx-auto">
               <div className="bg-card rounded-2xl border border-border/30 p-8 shadow-card text-center">
-                <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mx-auto mb-6">
-                  <Bot className="w-12 h-12 text-primary" />
+                <div className="w-32 h-32 flex items-center justify-center mx-auto mb-6">
+                  <img src={defaultChatbotAvatar} alt="Chatbot" className="w-full h-full object-contain drop-shadow-md" />
                 </div>
                 <h2 className="font-display font-semibold text-2xl mb-3">Test Your Chatbot</h2>
                 <p className="text-muted-foreground mb-6 max-w-md mx-auto">

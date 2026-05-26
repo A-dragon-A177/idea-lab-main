@@ -441,7 +441,7 @@ export class LlmService {
     }
 
     private async _callGeminiInternal(apiKey: string, messages: any[], maxTokens: number, temperature: number): Promise<string> {
-        const model = 'gemini-1.5-flash';
+        const model = process.env.Gemini_MODEL || 'gemini-2.5-flash';
         console.log(`[LlmService] Sending request to Google Gemini (${model})...`);
         const systemMessage = messages.find(m => m.role === 'system')?.content || '';
         const geminiContents = messages

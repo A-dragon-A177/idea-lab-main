@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import PageLayout from "../components/PageLayout";
 import { useInView } from "../hooks/useScrollProgress";
+import defaultChatbotAvatar from "../assets/chatbot-avatar.png";
 
 /* ─── Simulated UI Snippets ─── */
 
@@ -116,7 +117,7 @@ function ChatbotFeatureSnippet() {
   return (
     <div className="bg-white border border-gray-200 overflow-hidden" style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.06)" }}>
       <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-100 bg-[#09daed]/5">
-        <img src="/neesh-logo.png" alt="AI" className="w-5 h-5 object-contain" />
+        <img src={defaultChatbotAvatar} alt="AI" className="w-12 h-12 object-contain drop-shadow-sm" />
         <span className="text-[10px] text-[#09daed] font-bold tracking-widest uppercase">AI CHATBOT TESTER</span>
         <div className="ml-auto flex items-center gap-1.5">
           <div className="w-1.5 h-1.5 rounded-full bg-[#09daed] animate-pulse" />

@@ -370,7 +370,7 @@ const Chatbot = () => {
               <img
                 src={resolvedAvatar}
                 alt="Chatbot"
-                className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 p-1 object-cover"
+                className="w-20 h-20 object-contain"
               />
               <div>
                 <h2 className="font-semibold text-foreground">{botName}</h2>
@@ -419,7 +419,7 @@ const Chatbot = () => {
                     <img
                       src={resolvedAvatar}
                       alt="Bot"
-                      className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 p-0.5 flex-shrink-0 object-cover"
+                      className="w-16 h-16 flex-shrink-0 object-contain drop-shadow-sm"
                     />
                   ) : (
                     <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
@@ -455,7 +455,7 @@ const Chatbot = () => {
                   <img
                     src={resolvedAvatar}
                     alt="Bot"
-                    className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 p-0.5 flex-shrink-0 object-cover"
+                    className="w-16 h-16 flex-shrink-0 object-contain drop-shadow-sm"
                   />
                   <div className="bg-card border border-border/50 rounded-2xl rounded-tl-md p-4">
                     <div className="flex items-center gap-1">
@@ -548,7 +548,7 @@ const Chatbot = () => {
                   <img
                     src={resolvedAvatar}
                     alt="Chatbot"
-                    className="w-24 h-24 mx-auto mb-4 rounded-full object-cover"
+                    className="w-64 h-64 mx-auto mb-4 object-contain drop-shadow-[0_0_30px_rgba(9,218,237,0.5)]"
                   />
                   <h3 className="font-display font-semibold text-lg mb-2">Test Your Chatbot</h3>
                   <p className="text-sm text-muted-foreground">

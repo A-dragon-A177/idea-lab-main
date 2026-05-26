@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import PageLayout from "../components/PageLayout";
 import { useInView } from "../hooks/useScrollProgress";
 import PersonaSection from "../components/sections/PersonaSection";
+import defaultChatbotAvatar from "../assets/chatbot-avatar.png";
 
 /* ─── Feature Data (from FeaturesSection) ─── */
 const FEATURES = [
@@ -76,7 +77,7 @@ function ChatbotSnippet() {
   return (
     <div className="bg-white border border-gray-200 overflow-hidden" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.06)" }}>
       <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-100 bg-[#09daed]/5">
-        <img src="/neesh-logo.png" alt="AI" className="w-4 h-4 object-contain" />
+        <img src={defaultChatbotAvatar} alt="AI" className="w-6 h-6 object-contain drop-shadow-sm" />
         <span className="text-xs font-bold text-gray-800">Neesh AI Bot</span>
         <div className="ml-auto w-2 h-2 bg-[#09daed] animate-pulse rounded-full" />
       </div>

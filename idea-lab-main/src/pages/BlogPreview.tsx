@@ -982,8 +982,8 @@ const BlogPreview = ({ publicId }: BlogPreviewProps) => {
                   {/* Header */}
                   <div className="relative flex items-center gap-4 mb-6">
                     <div className="relative">
-                      <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-accent/50 shadow-[0_0_20px_hsl(var(--accent)/0.3)]">
-                        <img src={chatbotAvatar} alt="AI Assistant" className="w-full h-full object-cover" />
+                      <div className="w-16 h-16 drop-shadow-[0_0_20px_hsl(var(--accent)/0.3)]">
+                        <img src={chatbotAvatar} alt="AI Assistant" className="w-full h-full object-contain" />
                       </div>
                       <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-card" />
                     </div>
@@ -1159,8 +1159,8 @@ const BlogPreview = ({ publicId }: BlogPreviewProps) => {
             Any help ??
           </span>
           {/* Avatar circle */}
-          <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-accent/50 shadow-lg shadow-accent/20 hover:scale-110 transition-transform duration-200">
-            <img src={chatbotAvatar} alt="AI Assistant" className="w-full h-full object-cover" />
+          <div className="w-32 h-32 hover:scale-110 transition-transform duration-200 drop-shadow-[0_0_20px_rgba(9,218,237,0.7)]">
+            <img src={chatbotAvatar} alt="AI Assistant" className="w-full h-full object-contain" />
           </div>
         </button>
       )}
