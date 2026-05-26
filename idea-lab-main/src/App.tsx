@@ -7,11 +7,21 @@ import { lazy, Suspense } from "react";
 import { Loader2 } from "lucide-react";
 import { AuthProvider } from "./contexts/AuthContext";
 
-// Eagerly load critical pages
+// ── Backend warmup: wake Render from cold sleep immediately ──
+// Fire-and-forget — runs once when the JS module loads, well before
+// the user navigates to any authenticated page.
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+if (BACKEND_URL) {
+  fetch(`${BACKEND_URL}/api/public/health`, { method: 'GET', mode: 'cors' }).catch(() => {});
+}
+
+// Eagerly load only the landing page (critical path)
 import Index from "./pages/Index";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
 import NotFound from "./pages/NotFound";
+
+// Lazy load auth pages — not needed on initial landing page render
+const Login = lazy(() => import("./pages/Login"));
+const Signup = lazy(() => import("./pages/Signup"));
 
 // Lazy load heavier pages for faster initial load
 const Dashboard = lazy(() => import("./pages/Dashboard"));

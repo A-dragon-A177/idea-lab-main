@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import apiClient from "@/lib/api";
@@ -22,12 +22,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // ── Guards to prevent the auth event loop ──
+  // Track which user ID we've already synced so we never sync twice for the same session
+  const syncedUserIdRef = useRef<string | null>(null);
+  // Track the current user ID to skip redundant setUser/setSession calls
+  const currentUserIdRef = useRef<string | null>(null);
+
   const syncWithBackend = useCallback(async () => {
     try {
-      // Double-check we actually have a session
       const { data: { session: currentSession } } = await supabase.auth.getSession();
       if (!currentSession?.access_token) {
-        console.log('[AuthContext] Skipping backend sync - no active session');
         return;
       }
 
@@ -55,8 +59,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const initializeAuth = async () => {
       try {
         const { data: { session: initialSession } } = await supabase.auth.getSession();
+        const initialUser = initialSession?.user ?? null;
         setSession(initialSession);
-        setUser(initialSession?.user ?? null);
+        setUser(initialUser);
+        currentUserIdRef.current = initialUser?.id ?? null;
+
+        // Sync on initial load if we have a session
+        if (initialUser && initialSession?.access_token) {
+          syncedUserIdRef.current = initialUser.id;
+          syncWithBackend();
+        }
       } catch (error) {
         console.error('[AuthContext] Error getting initial session:', error);
       } finally {
@@ -68,15 +80,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // 2. Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, currentSession) => {
+      (event, currentSession) => {
         console.log('[AuthContext] Auth state changed:', event);
-        
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
-        setLoading(false);
 
-        if (event === 'SIGNED_IN' && currentSession?.access_token) {
+        const newUserId = currentSession?.user?.id ?? null;
+
+        // Skip redundant updates — if the user ID hasn't changed, don't trigger re-renders.
+        // This prevents the cascade: SIGNED_IN → setUser → re-render → hooks re-fire → etc.
+        if (newUserId === currentUserIdRef.current && event !== 'SIGNED_OUT') {
+          // Still update session silently in case the token was refreshed
+          if (currentSession) {
+            setSession(currentSession);
+          }
+          return;
+        }
+
+        // Batch state updates with setTimeout to avoid React mid-render issues
+        // (recommended by Supabase: https://supabase.com/docs/reference/javascript/auth-onauthstatechange)
+        setTimeout(() => {
+          currentUserIdRef.current = newUserId;
+          setSession(currentSession);
+          setUser(currentSession?.user ?? null);
+          setLoading(false);
+        }, 0);
+
+        // Only sync with backend ONCE per unique sign-in
+        if (
+          event === 'SIGNED_IN' &&
+          currentSession?.access_token &&
+          newUserId &&
+          syncedUserIdRef.current !== newUserId
+        ) {
+          syncedUserIdRef.current = newUserId;
           syncWithBackend();
+        }
+
+        // Reset sync flag on sign-out so next sign-in syncs again
+        if (event === 'SIGNED_OUT') {
+          syncedUserIdRef.current = null;
+          currentUserIdRef.current = null;
         }
       }
     );
@@ -84,7 +126,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       subscription.unsubscribe();
     };
-  }, [syncWithBackend]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const signUp = async (email: string, password: string) => {
     const redirectUrl = `${window.location.origin}/dashboard`;
@@ -116,11 +159,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     try {
       const { error } = await supabase.auth.signOut();
+      syncedUserIdRef.current = null;
+      currentUserIdRef.current = null;
       setSession(null);
       setUser(null);
       return { error };
     } catch (error) {
       console.error('[AuthContext] signOut exception:', error);
+      syncedUserIdRef.current = null;
+      currentUserIdRef.current = null;
       setSession(null);
       setUser(null);
       return { error: null };

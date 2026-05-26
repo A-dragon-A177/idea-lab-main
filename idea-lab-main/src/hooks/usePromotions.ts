@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "./useAuth";
 import apiClient from "@/lib/api";
 
@@ -28,20 +28,34 @@ export const usePromotions = () => {
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchPromotions = useCallback(async () => {
+  // Guard against duplicate fetches
+  const lastFetchedUserIdRef = useRef<string | null>(null);
+  const isFetchingRef = useRef(false);
+
+  const fetchPromotions = useCallback(async (force = false) => {
     if (!user) {
       setPromotions([]);
+      lastFetchedUserIdRef.current = null;
       return;
     }
+
+    if (!force && lastFetchedUserIdRef.current === user.id) {
+      return;
+    }
+
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
 
     try {
       setLoading(true);
       const data = await apiClient.get<Promotion[]>('/api/promotions');
       setPromotions(data);
+      lastFetchedUserIdRef.current = user.id;
     } catch (err) {
       console.error("[usePromotions] Error fetching promotions:", err);
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;
     }
   }, [user?.id]);
 

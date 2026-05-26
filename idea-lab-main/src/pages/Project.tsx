@@ -68,6 +68,7 @@ import { useAudienceData } from "@/hooks/useAudienceData";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { toast } from "sonner";
+import { uploadFileToStorage, migrateBase64ToStorage, isBase64 } from "@/lib/storage";
 
 // Occupation colors for tags
 const occupationColors: Record<string, { bg: string; text: string }> = {
@@ -301,8 +302,8 @@ const Project = () => {
   };
 
   const handleSectionImageUpload = async (sectionId: string, file: File) => {
+    if (!id) return;
     console.log(`[SectionImage] Upload started for section ${sectionId}`);
-    console.log(`[SectionImage] File: ${file.name}, size: ${file.size}, type: ${file.type}`);
 
     if (!file.type.startsWith("image/")) {
       toast.error("Please upload a valid image file.");
@@ -313,48 +314,34 @@ const Project = () => {
       return;
     }
 
-    // Show a temporary blob URL immediately so the user sees the image right away
+    // Show a temporary blob URL immediately
     const tempUrl = URL.createObjectURL(file);
-    console.log(`[SectionImage] Created temp blob URL: ${tempUrl.substring(0, 50)}...`);
     setSections(prev => prev.map(s =>
       s.id === sectionId ? { ...s, imageUrl: tempUrl, content: file.name } : s
     ));
 
     try {
-      // Compress and convert to base64 for persistence
-      console.log(`[SectionImage] Starting compression...`);
+      // Compress then upload to Supabase Storage
       const { compressImage } = await import("@/lib/imageUtils");
       const compressed = await compressImage(file);
-      console.log(`[SectionImage] Compression done. Compressed size: ${compressed.size}`);
+      const storageUrl = await uploadFileToStorage(id, compressed, "image");
+      console.log(`[SectionImage] ✅ Uploaded to Storage: ${storageUrl}`);
 
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = () => reject(new Error("Failed to read image"));
-        reader.readAsDataURL(compressed);
-      });
-      console.log(`[SectionImage] Base64 conversion done. Length: ${base64.length}, starts with: ${base64.substring(0, 50)}`);
-
-      // Replace temp blob URL with persistent base64
+      // Replace temp blob URL with persistent Storage URL
       URL.revokeObjectURL(tempUrl);
-      setSections(prev => {
-        const updated = prev.map(s =>
-          s.id === sectionId ? { ...s, imageUrl: base64, content: base64 } : s
-        );
-        console.log(`[SectionImage] ✅ Section updated with base64. Section found: ${updated.some(s => s.id === sectionId)}`);
-        return updated;
-      });
-      toast.success("Image added to section");
+      setSections(prev => prev.map(s =>
+        s.id === sectionId ? { ...s, imageUrl: storageUrl, content: storageUrl } : s
+      ));
+      toast.success("Image uploaded successfully");
     } catch (err) {
-      console.error("[SectionImage] ❌ Compression/conversion failed:", err);
-      // Keep the temp blob URL as fallback (will be lost on refresh)
-      toast.success("Image added (save now to persist it)");
+      console.error("[SectionImage] ❌ Upload failed:", err);
+      toast.error("Failed to upload image. Save to retry.");
     }
   };
 
   const handleSectionVideoUpload = async (sectionId: string, file: File) => {
+    if (!id) return;
     console.log(`[SectionVideo] Upload started for section ${sectionId}`);
-    console.log(`[SectionVideo] File: ${file.name}, size: ${file.size}, type: ${file.type}`);
 
     if (!file.type.startsWith("video/")) {
       toast.error("Please upload a valid video file.");
@@ -365,38 +352,26 @@ const Project = () => {
       return;
     }
 
-    // Show a temporary blob URL immediately so the user sees the video right away
+    // Show a temporary blob URL immediately
     const tempUrl = URL.createObjectURL(file);
-    console.log(`[SectionVideo] Created temp blob URL`);
     setSections(prev => prev.map(s =>
       s.id === sectionId ? { ...s, videoUrl: tempUrl, content: file.name } : s
     ));
 
     try {
-      // Convert to base64 for persistence (no re-encoding, preserves quality)
-      console.log(`[SectionVideo] Starting base64 conversion...`);
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = () => reject(new Error("Failed to read video"));
-        reader.readAsDataURL(file);
-      });
-      console.log(`[SectionVideo] Base64 conversion done. Length: ${base64.length}`);
+      // Upload directly to Supabase Storage (no base64 conversion)
+      const storageUrl = await uploadFileToStorage(id, file, "video");
+      console.log(`[SectionVideo] ✅ Uploaded to Storage: ${storageUrl}`);
 
-      // Replace temp blob URL with persistent base64
+      // Replace temp blob URL with persistent Storage URL
       URL.revokeObjectURL(tempUrl);
-      setSections(prev => {
-        const updated = prev.map(s =>
-          s.id === sectionId ? { ...s, videoUrl: base64, content: base64 } : s
-        );
-        console.log(`[SectionVideo] ✅ Section updated with base64.`);
-        return updated;
-      });
-      toast.success("Video added to section");
+      setSections(prev => prev.map(s =>
+        s.id === sectionId ? { ...s, videoUrl: storageUrl, content: storageUrl } : s
+      ));
+      toast.success("Video uploaded successfully");
     } catch (err) {
-      console.error("[SectionVideo] ❌ Conversion failed:", err);
-      // Keep the temp blob URL as fallback (will be lost on refresh)
-      toast.success("Video added (save now to persist it)");
+      console.error("[SectionVideo] ❌ Upload failed:", err);
+      toast.error("Failed to upload video. Save to retry.");
     }
   };
 
@@ -662,52 +637,62 @@ const Project = () => {
                       console.log("[Blog Save] Custom sections (including feedback):", customSections);
                       console.log("[Blog Save] Feedback sections:", customSections.filter(s => s.type === "feedback"));
 
-                      // Build custom_fields, preserving feedback form data
-                      const customFields = customSections.map((s, index) => {
-                        if (s.type === "feedback") {
-                          console.log("[Blog Save] ✅ Preserving feedback section:", s.feedbackTitle, "with", s.feedbackFields?.length, "fields");
+                      // Build custom_fields — migrate any remaining base64 to Storage URLs
+                      const customFields = await Promise.all(
+                        customSections.map(async (s, index) => {
+                          if (s.type === "feedback") {
+                            return {
+                              id: s.id,
+                              type: "feedback",
+                              title: s.feedbackTitle || s.title,
+                              description: s.feedbackDescription || s.content,
+                              fields: s.feedbackFields || [],
+                              order: index,
+                            };
+                          }
+                          if (s.type === "image") {
+                            const imgValue = s.imageUrl || s.content || "";
+                            // Migrate base64 to Storage if needed
+                            const finalUrl = isBase64(imgValue)
+                              ? await migrateBase64ToStorage(id, imgValue, "image")
+                              : imgValue;
+                            return {
+                              id: s.id,
+                              type: "image",
+                              value: finalUrl,
+                              order: index,
+                            };
+                          }
+                          if (s.type === "video") {
+                            const vidValue = s.videoUrl || s.content || "";
+                            // Migrate base64 to Storage if needed
+                            const finalUrl = isBase64(vidValue)
+                              ? await migrateBase64ToStorage(id, vidValue, "video")
+                              : vidValue;
+                            return {
+                              id: s.id,
+                              type: "video",
+                              value: finalUrl,
+                              order: index,
+                            };
+                          }
                           return {
                             id: s.id,
-                            type: "feedback",
-                            title: s.feedbackTitle || s.title,
-                            description: s.feedbackDescription || s.content,
-                            fields: s.feedbackFields || [],
+                            type: s.type,
+                            value: s.content,
                             order: index,
                           };
-                        }
-                        // Image sections: save the actual base64 data in `value`
-                        if (s.type === "image") {
-                          const imgValue = s.imageUrl || s.content || "";
-                          console.log(`[Blog Save] 🖼️ Image section ${s.id}: value length=${imgValue.length}, starts=${imgValue.substring(0, 40)}`);
-                          return {
-                            id: s.id,
-                            type: "image",
-                            value: imgValue,
-                            order: index,
-                          };
-                        }
-                        // Video sections: save the base64 data in `value`
-                        if (s.type === "video") {
-                          const vidValue = s.videoUrl || s.content || "";
-                          console.log(`[Blog Save] 🎬 Video section ${s.id}: value length=${vidValue.length}`);
-                          return {
-                            id: s.id,
-                            type: "video",
-                            value: vidValue,
-                            order: index,
-                          };
-                        }
-                        return {
-                          id: s.id,
-                          type: s.type,
-                          value: s.content,
-                          order: index,
-                        };
-                      });
+                        })
+                      );
+
+                      // Migrate cover image base64 to Storage URL if needed
+                      const finalCoverUrl = isBase64(coverImage || "")
+                        ? await migrateBase64ToStorage(id, coverImage, "cover")
+                        : (coverImage || undefined);
 
                       const blogData = {
                         heading: project?.title,
-                        cover_image_url: coverImage || undefined,
+                        cover_image_url: finalCoverUrl,
                         introduction: introSection?.content || "",
                         content: contentSection?.content || "",
                         custom_fields: customFields,

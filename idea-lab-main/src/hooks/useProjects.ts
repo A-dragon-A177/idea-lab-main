@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "./useAuth";
 import { toast } from "sonner";
 import apiClient from "@/lib/api";
@@ -111,12 +111,26 @@ export const useProjects = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchProjects = async () => {
+  // Guard against duplicate fetches during auth state transitions
+  const lastFetchedUserIdRef = useRef<string | null>(null);
+  const isFetchingRef = useRef(false);
+
+  const fetchProjects = async (force = false) => {
     if (!user) {
       setProjects([]);
       setLoading(false);
+      lastFetchedUserIdRef.current = null;
       return;
     }
+
+    // Skip if we already fetched for this user (unless forced)
+    if (!force && lastFetchedUserIdRef.current === user.id && projects.length >= 0 && !loading) {
+      return;
+    }
+
+    // Prevent concurrent fetches
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
 
     try {
       setLoading(true);
@@ -128,12 +142,14 @@ export const useProjects = () => {
 
       const transformedProjects = backendProjects.map(transformProject);
       setProjects(transformedProjects);
+      lastFetchedUserIdRef.current = user.id;
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to fetch projects";
       setError(message);
       console.error("[useProjects] Error fetching projects:", err);
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;
     }
   };
 
