@@ -8,7 +8,8 @@ console.log('[AI Service] Loaded ENV:', {
     PORT: process.env.PORT,
     DEFAULT_LLM_PROVIDER: process.env.DEFAULT_LLM_PROVIDER,
     OPENROUTER_MODEL: process.env.OPENROUTER_MODEL,
-    GEMINI_API_KEY: process.env.GEMINI_API_KEY ? 'Set' : 'Not Set'
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY ? 'Set' : 'Not Set',
+    RENDER_DISCOVERY_SERVICE: process.env.RENDER_DISCOVERY_SERVICE
 });
 
 
