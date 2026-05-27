@@ -4,12 +4,17 @@ import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 
 dotenv.config();
+import os from 'os';
+const networkInterfaces = os.networkInterfaces();
+const ips = Object.values(networkInterfaces).flat().filter(i => i?.family === 'IPv4' && !i.internal).map(i => i?.address);
+
 console.log('[AI Service] Loaded ENV:', {
     PORT: process.env.PORT,
     DEFAULT_LLM_PROVIDER: process.env.DEFAULT_LLM_PROVIDER,
     OPENROUTER_MODEL: process.env.OPENROUTER_MODEL,
     GEMINI_API_KEY: process.env.GEMINI_API_KEY ? 'Set' : 'Not Set',
-    RENDER_DISCOVERY_SERVICE: process.env.RENDER_DISCOVERY_SERVICE
+    RENDER_DISCOVERY_SERVICE: process.env.RENDER_DISCOVERY_SERVICE,
+    INTERNAL_IPS: ips
 });
 
 
