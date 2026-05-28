@@ -56,11 +56,20 @@ public class DocumentController {
 
     // List
     @GetMapping("/project/{projectId}")
-    public ResponseEntity<List<KnowledgeDocumentDTO>> listDocuments(
+    public ResponseEntity<?> listDocuments(
             @PathVariable UUID projectId,
             @AuthenticationPrincipal Jwt jwt) {
-        // Just keeping signature consistent, logic unchanged for now
-        return ResponseEntity.ok(documentService.getActiveDocuments(projectId));
+        try {
+            return ResponseEntity.ok(documentService.getActiveDocuments(projectId));
+        } catch (Exception e) {
+            log.error("Failed to list documents", e);
+            String cause = e.getCause() != null ? e.getCause().getMessage() : "No cause";
+            return ResponseEntity.status(500).body(java.util.Map.of(
+                "error", "Internal Server Error",
+                "message", e.getMessage() != null ? e.getMessage() : e.getClass().getName(),
+                "cause", cause
+            ));
+        }
     }
 
     @DeleteMapping("/{documentId}")
