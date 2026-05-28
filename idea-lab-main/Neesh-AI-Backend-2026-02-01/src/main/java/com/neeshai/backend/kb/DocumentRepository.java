@@ -8,8 +8,8 @@ import java.util.UUID;
 public interface DocumentRepository extends JpaRepository<Document, UUID> {
 
     // Find active documents for a project
-    List<Document> findByProjectIdAndIsActiveTrue(UUID projectId);
+    List<Document> findByProjectIdAndActiveTrue(UUID projectId);
 
     // Find specific active document (for replacement)
-    Optional<Document> findByProjectIdAndOriginalFilenameAndIsActiveTrue(UUID projectId, String originalFilename);
+    Optional<Document> findByProjectIdAndOriginalFilenameAndActiveTrue(UUID projectId, String originalFilename);
 }

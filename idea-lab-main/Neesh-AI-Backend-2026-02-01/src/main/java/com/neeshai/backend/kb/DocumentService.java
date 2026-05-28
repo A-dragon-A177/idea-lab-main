@@ -48,7 +48,7 @@ public class DocumentService {
         // Prompt says "Filename alone must NOT be relied on for identity", but usually
         // we want to prevent duplicate names in list.
         // Let's prevent duplication for UX, but rely on ID for logic.
-        if (documentRepository.findByProjectIdAndOriginalFilenameAndIsActiveTrue(projectId, file.getOriginalFilename())
+        if (documentRepository.findByProjectIdAndOriginalFilenameAndActiveTrue(projectId, file.getOriginalFilename())
                 .isPresent()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "File with this name already exists. Use Replace to update it.");
@@ -143,7 +143,7 @@ public class DocumentService {
 
     public List<KnowledgeDocumentDTO> getActiveDocuments(UUID projectId) {
         // Public/Private access? Assuming private list for now.
-        return documentRepository.findByProjectIdAndIsActiveTrue(projectId)
+        return documentRepository.findByProjectIdAndActiveTrue(projectId)
                 .stream()
                 .map(KnowledgeDocumentDTO::fromEntity)
                 .collect(Collectors.toList());
