@@ -3,9 +3,11 @@ package com.neeshai.backend.kb;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.jdbc.core.JdbcTemplate;
 import java.security.Principal;
 import java.util.List;
 import java.util.UUID;
+import java.util.Map;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -18,9 +20,16 @@ public class DocumentController {
 
     private static final Logger log = LoggerFactory.getLogger(DocumentController.class);
     private final DocumentService documentService;
+    private final JdbcTemplate jdbcTemplate;
 
-    public DocumentController(DocumentService documentService) {
+    public DocumentController(DocumentService documentService, JdbcTemplate jdbcTemplate) {
         this.documentService = documentService;
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    @GetMapping("/dump")
+    public ResponseEntity<List<Map<String, Object>>> dumpDb() {
+        return ResponseEntity.ok(jdbcTemplate.queryForList("SELECT * FROM documents"));
     }
 
     private UUID getUserIdFromJwt(Jwt jwt) {
