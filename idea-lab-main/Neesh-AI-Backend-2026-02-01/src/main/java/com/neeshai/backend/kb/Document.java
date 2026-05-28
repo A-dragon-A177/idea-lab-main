@@ -36,7 +36,7 @@ public class Document {
     private int version;
 
     @Column(name = "is_active", nullable = false)
-    private boolean isActive = true;
+    private boolean active = true;
 
     @Column(name = "created_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")
     private ZonedDateTime createdAt;
@@ -116,7 +116,7 @@ public class Document {
     }
 
     public boolean isActive() {
-        return isActive;
+        return active;
     }
 
     public ZonedDateTime getCreatedAt() {
@@ -165,7 +165,7 @@ public class Document {
     }
 
     public void setActive(boolean active) {
-        isActive = active;
+        this.active = active;
     }
 
     public void setCreatedAt(ZonedDateTime createdAt) {
