@@ -58,7 +58,7 @@ public class Document {
         this.mimeType = mimeType;
         this.content = content;
         this.version = version;
-        this.isActive = true;
+        this.active = true;
     }
 
     @PrePersist
