@@ -73,11 +73,11 @@ public class DocumentController {
     }
 
     @PostMapping("/project/{projectId}/refresh")
-    public ResponseEntity<Void> refreshDocuments(
+    public ResponseEntity<java.util.Map<String, String>> refreshDocuments(
             @PathVariable UUID projectId,
             @AuthenticationPrincipal Jwt jwt) {
         UUID userId = getUserIdFromJwt(jwt);
         documentService.refreshDocuments(projectId, userId);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(java.util.Map.of("status", "success"));
     }
 }
