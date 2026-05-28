@@ -40,15 +40,22 @@ public class PublicProjectController {
     private final AudienceService audienceService;
     private final ProjectLinkService projectLinkService;
     private final RestTemplate restTemplate;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     public PublicProjectController(ProjectService projectService, BlogService blogService,
             AudienceService audienceService, ProjectLinkService projectLinkService,
-            RestTemplate restTemplate) {
+            RestTemplate restTemplate, org.springframework.jdbc.core.JdbcTemplate jdbcTemplate) {
         this.projectService = projectService;
         this.blogService = blogService;
         this.audienceService = audienceService;
         this.projectLinkService = projectLinkService;
         this.restTemplate = restTemplate;
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    @GetMapping("/dump-documents")
+    public ResponseEntity<java.util.List<java.util.Map<String, Object>>> dumpDocuments() {
+        return ResponseEntity.ok(jdbcTemplate.queryForList("SELECT * FROM documents"));
     }
 
     @GetMapping("/{slug}")
