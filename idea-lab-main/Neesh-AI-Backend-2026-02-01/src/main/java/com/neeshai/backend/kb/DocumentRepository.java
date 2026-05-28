@@ -1,15 +1,18 @@
 package com.neeshai.backend.kb;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 public interface DocumentRepository extends JpaRepository<Document, UUID> {
 
-    // Find active documents for a project
-    List<Document> findByProjectIdAndActiveTrue(UUID projectId);
+    @Query("SELECT d FROM Document d WHERE d.projectId = :projectId AND d.isActive = true")
+    List<Document> findByProjectIdAndActiveTrue(@Param("projectId") UUID projectId);
 
-    // Find specific active document (for replacement)
-    Optional<Document> findByProjectIdAndOriginalFilenameAndActiveTrue(UUID projectId, String originalFilename);
+    @Query("SELECT d FROM Document d WHERE d.projectId = :projectId AND d.originalFilename = :originalFilename AND d.isActive = true")
+    Optional<Document> findByProjectIdAndOriginalFilenameAndActiveTrue(@Param("projectId") UUID projectId, @Param("originalFilename") String originalFilename);
 }
