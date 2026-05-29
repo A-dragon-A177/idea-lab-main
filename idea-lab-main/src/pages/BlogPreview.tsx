@@ -618,8 +618,15 @@ const BlogPreview = ({ publicId }: BlogPreviewProps) => {
 
     try {
       // Call the backend API (same endpoint as the chatbot tester)
+      // Build chat history from existing messages so the AI service can handle follow-ups
+      const historyPayload = chatMessages.map(m => ({
+        role: m.role === "bot" ? "assistant" : m.role,
+        content: m.content,
+      }));
+
       const response = await apiClient.post<any>(`/api/public/projects/${id}/chat`, {
         query: message,
+        chat_history: historyPayload,
         userName: feedbackValues['__name__'] || undefined,
         userEmail: feedbackValues['__email__'] || undefined,
         sessionId: sessionIdRef.current,

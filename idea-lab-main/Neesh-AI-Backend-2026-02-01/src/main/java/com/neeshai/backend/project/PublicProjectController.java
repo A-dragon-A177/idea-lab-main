@@ -5,6 +5,7 @@ import com.neeshai.backend.audience.AudienceService;
 import com.neeshai.backend.blog.BlogDTOs;
 import com.neeshai.backend.blog.BlogService;
 import com.neeshai.backend.projectlink.ProjectLinkService;
+import com.neeshai.backend.apikey.UserApiKeyService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -39,16 +40,19 @@ public class PublicProjectController {
     private final BlogService blogService;
     private final AudienceService audienceService;
     private final ProjectLinkService projectLinkService;
+    private final UserApiKeyService userApiKeyService;
     private final RestTemplate restTemplate;
     private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     public PublicProjectController(ProjectService projectService, BlogService blogService,
             AudienceService audienceService, ProjectLinkService projectLinkService,
+            UserApiKeyService userApiKeyService,
             RestTemplate restTemplate, org.springframework.jdbc.core.JdbcTemplate jdbcTemplate) {
         this.projectService = projectService;
         this.blogService = blogService;
         this.audienceService = audienceService;
         this.projectLinkService = projectLinkService;
+        this.userApiKeyService = userApiKeyService;
         this.restTemplate = restTemplate;
         this.jdbcTemplate = jdbcTemplate;
     }
@@ -124,6 +128,16 @@ public class PublicProjectController {
                         .map(UUID::toString)
                         .collect(Collectors.toList()));
             }
+
+            // Fetch the project owner and their active API key config
+            projectService.getPublicProject(projectId.toString()).ifPresent(project -> {
+                Map<String, String> apiKeyConfig = userApiKeyService.getActiveConfig(project.getOwnerId());
+                if (apiKeyConfig != null) {
+                    body.put("provider", apiKeyConfig.get("provider"));
+                    body.put("apiKey", apiKeyConfig.get("apiKey"));
+                    logger.info("[PublicChat] Using project owner's LLM provider: {}", apiKeyConfig.get("provider"));
+                }
+            });
 
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
             

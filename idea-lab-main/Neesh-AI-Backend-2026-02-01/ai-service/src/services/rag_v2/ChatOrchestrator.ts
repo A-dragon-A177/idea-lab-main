@@ -53,7 +53,7 @@ export class ChatOrchestrator {
             // STEP 2: Retrieval
             let chunks: any[] = [];
             if (ingestionStatus === 'completed') {
-                chunks = await this.retrievalService.retrieveChunks(projectId, query);
+                chunks = await this.retrievalService.retrieveChunks(projectId, query, apiKey);
             }
 
             // STEP 3: Decision

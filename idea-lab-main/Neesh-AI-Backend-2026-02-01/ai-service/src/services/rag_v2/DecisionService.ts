@@ -26,13 +26,15 @@ export class DecisionService {
         // Also if it's a manual naked continuation request or a meta-query from the UI default chips
         const normalizedQuery = query ? query.trim().toLowerCase().replace(/['"!?.,]/g, '') : "";
         const conversationalPhrases = [
-            "continue", "more", "explain more", "go on", "please continue",
+            "continue", "more", "explain", "explain more", "go on", "please continue",
             "summarize this blog", "summary of this", "give me a summary", 
             "whats the main takeaway", "what is the main takeaway",
             "explain in simple terms", "explain in detail", "related topics", 
             "tell me more", "tell me more about this", "be more specific",
             "what is this", "who are you", "what can you do",
-            "what are all the", "available erp", "list of erp", "which erp"
+            "what are all the", "available erp", "list of erp", "which erp",
+            "details", "elaborate", "summarize", "summary", "how does it work",
+            "how it works", "what does it do", "describe", "overview"
         ];
         
         const isConversational = conversationalPhrases.some(phrase => normalizedQuery.includes(phrase));

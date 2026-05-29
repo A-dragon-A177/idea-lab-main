@@ -126,13 +126,7 @@ export const useDocuments = (projectId: string | undefined) => {
     }
 
     try {
-      // Soft delete
-      const { error: deleteError } = await supabase
-        .from("documents")
-        .update({ is_active: false })
-        .eq("id", documentId);
-
-      if (deleteError) throw deleteError;
+      await apiClient.delete(`/api/documents/${documentId}`);
 
       setDocuments(prev => prev.filter(d => d.id !== documentId));
       toast.success("Document deleted successfully!");

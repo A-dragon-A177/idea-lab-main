@@ -26,10 +26,11 @@ export class EmbeddingService {
      * Generate embedding using Gemini gemini-embedding-001 API.
      * Falls back to hash-based embedding if API is unavailable.
      */
-    async generateEmbedding(text: string): Promise<number[]> {
-        if (this.geminiApiKey) {
+    async generateEmbedding(text: string, apiKey?: string): Promise<number[]> {
+        const activeKey = apiKey || this.geminiApiKey;
+        if (activeKey) {
             try {
-                return await this.callGeminiEmbedding(text);
+                return await this.callGeminiEmbedding(text, activeKey);
             } catch (error: any) {
                 console.warn(`[EmbeddingService] Gemini embedding failed, falling back to hash: ${error.message}`);
                 return this.hashEmbedding(text);
@@ -42,12 +43,13 @@ export class EmbeddingService {
      * Generate embeddings for multiple texts.
      * Uses Gemini batch embedding API for efficiency.
      */
-    async generateEmbeddings(texts: string[]): Promise<number[][]> {
-        if (this.geminiApiKey && texts.length > 0) {
+    async generateEmbeddings(texts: string[], apiKey?: string): Promise<number[][]> {
+        const activeKey = apiKey || this.geminiApiKey;
+        if (activeKey && texts.length > 0) {
             // During bulk ingestion, we REQUIRE real Gemini embeddings.
             // If it fails (e.g. rate limit), we throw so the caller knows,
             // rather than silently falling back to low-quality hashes.
-            return await this.callGeminiBatchEmbedding(texts);
+            return await this.callGeminiBatchEmbedding(texts, activeKey);
         }
         return texts.map(t => this.hashEmbedding(t));
     }
@@ -55,8 +57,8 @@ export class EmbeddingService {
     /**
      * Call Gemini Embedding API for a single text.
      */
-    private async callGeminiEmbedding(text: string): Promise<number[]> {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.embeddingModel}:embedContent?key=${this.geminiApiKey}`;
+    private async callGeminiEmbedding(text: string, apiKey: string): Promise<number[]> {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.embeddingModel}:embedContent?key=${apiKey}`;
 
         const response = await fetch(url, {
             method: 'POST',
@@ -90,7 +92,7 @@ export class EmbeddingService {
      * Call Gemini Batch Embedding API for multiple texts.
      * Processes in tiny batches with longer delays for rate-limit safety.
      */
-    private async callGeminiBatchEmbedding(texts: string[]): Promise<number[][]> {
+    private async callGeminiBatchEmbedding(texts: string[], apiKey: string): Promise<number[][]> {
         const batchSize = 2; // Maximum safety for Gemini Free Tier
         const allEmbeddings: number[][] = [];
 
@@ -107,7 +109,7 @@ export class EmbeddingService {
             let success = false;
 
             while (retryCount < maxRetries && !success) {
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.embeddingModel}:batchEmbedContents?key=${this.geminiApiKey}`;
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.embeddingModel}:batchEmbedContents?key=${apiKey}`;
                 try {
                     const response = await fetch(url, {
                         method: 'POST',

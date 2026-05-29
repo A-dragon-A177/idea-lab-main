@@ -15,9 +15,9 @@ export class RetrievalService {
      * ONLY does: query -> top 5 chunks
      * NO fallback, logging, or LLM logic here.
      */
-    async retrieveChunks(projectId: string, query: string): Promise<QueryResult[]> {
+    async retrieveChunks(projectId: string, query: string, apiKey?: string): Promise<QueryResult[]> {
         console.log(`[RetrievalService] Generating embedding for query: "${query}"`);
-        const queryEmbedding = await this.embeddingService.generateEmbedding(query);
+        const queryEmbedding = await this.embeddingService.generateEmbedding(query, apiKey);
         
         console.log(`[RetrievalService] Querying vector store for top ${CONFIG.TOP_K} chunks`);
         const chunks = await this.vectorStore.queryVectors(projectId, queryEmbedding, CONFIG.TOP_K, 0.0);
