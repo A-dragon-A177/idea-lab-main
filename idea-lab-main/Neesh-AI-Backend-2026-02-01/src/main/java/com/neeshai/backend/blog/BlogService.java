@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.neeshai.backend.project.Project;
 import com.neeshai.backend.project.ProjectRepository;
+import com.neeshai.backend.kb.AiIngestionService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,11 +20,13 @@ public class BlogService {
     private final BlogRepository blogRepository;
     private final ProjectRepository projectRepository;
     private final ObjectMapper objectMapper;
+    private final AiIngestionService aiIngestionService;
 
-    public BlogService(BlogRepository blogRepository, ProjectRepository projectRepository, ObjectMapper objectMapper) {
+    public BlogService(BlogRepository blogRepository, ProjectRepository projectRepository, ObjectMapper objectMapper, AiIngestionService aiIngestionService) {
         this.blogRepository = blogRepository;
         this.projectRepository = projectRepository;
         this.objectMapper = objectMapper;
+        this.aiIngestionService = aiIngestionService;
     }
 
     public Optional<BlogDTOs.BlogContentDTO> getBlogContent(UUID projectId, UUID ownerId) {
@@ -132,6 +135,9 @@ public class BlogService {
         System.out.println("  - Custom Fields JSON: " + blog.getCustomFields());
 
         Blog savedBlog = blogRepository.save(blog);
+
+        // Trigger ingestion so that RAG vector DB updates with the latest blog text
+        aiIngestionService.triggerIngestionAsync(projectId);
 
         System.out.println("After saving to database:");
         System.out.println("  - Saved Blog ID: " + savedBlog.getId());

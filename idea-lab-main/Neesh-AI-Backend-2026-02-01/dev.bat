@@ -17,7 +17,7 @@ start "Neesh AI Service" cmd /k "npm run dev"
 cd ..
 
 REM Start Frontend
-cd frontend
+cd ..
 start "Neesh AI Frontend" cmd /k "npm run dev"
 
 echo Services starting...

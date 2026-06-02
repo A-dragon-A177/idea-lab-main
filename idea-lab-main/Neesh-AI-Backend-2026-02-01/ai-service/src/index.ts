@@ -3,7 +3,7 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 
-dotenv.config();
+dotenv.config({ override: true });
 import os from 'os';
 const networkInterfaces = os.networkInterfaces();
 const ips = Object.values(networkInterfaces).flat().filter(i => i?.family === 'IPv4' && !i.internal).map(i => i?.address);
