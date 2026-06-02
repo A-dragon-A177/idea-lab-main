@@ -30,9 +30,9 @@ export class EmbeddingService {
         const activeKey = apiKey || this.geminiApiKey;
         if (activeKey) {
             try {
-                return await this.callGeminiEmbedding(text, activeKey);
+                return await this.callGeminiEmbeddingWithRetry(text, activeKey);
             } catch (error: any) {
-                console.warn(`[EmbeddingService] Gemini embedding failed, falling back to hash: ${error.message}`);
+                console.warn(`[EmbeddingService] Gemini embedding failed after retries, falling back to hash: ${error.message}`);
                 return this.hashEmbedding(text);
             }
         }
@@ -52,6 +52,36 @@ export class EmbeddingService {
             return await this.callGeminiBatchEmbedding(texts, activeKey);
         }
         return texts.map(t => this.hashEmbedding(t));
+    }
+
+    /**
+     * Call Gemini Embedding API with retry logic for 429 rate limits.
+     * Retries up to 3 times with exponential backoff before giving up.
+     */
+    private async callGeminiEmbeddingWithRetry(text: string, apiKey: string): Promise<number[]> {
+        const maxRetries = 3;
+        let lastError: any = null;
+
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                return await this.callGeminiEmbedding(text, apiKey);
+            } catch (error: any) {
+                lastError = error;
+                const is429 = error.message?.includes('429') || error.message?.includes('rate') || error.message?.includes('RESOURCE_EXHAUSTED');
+                
+                if (is429 && attempt < maxRetries) {
+                    const waitMs = Math.pow(2, attempt) * 2000; // 4s, 8s, 16s
+                    console.warn(`[EmbeddingService] Embedding rate limited (429), retrying in ${waitMs}ms (attempt ${attempt}/${maxRetries})...`);
+                    await new Promise(resolve => setTimeout(resolve, waitMs));
+                    continue;
+                }
+                
+                // Non-429 errors or final 429 attempt — throw immediately
+                throw error;
+            }
+        }
+        
+        throw lastError;
     }
 
     /**
@@ -75,6 +105,7 @@ export class EmbeddingService {
 
         if (!response.ok) {
             const errorBody = await response.text();
+            console.error(`[EmbeddingService] API error (${response.status}): ${errorBody}`);
             throw new Error(`Gemini Embedding API error (${response.status}): ${errorBody}`);
         }
 

@@ -95,11 +95,25 @@ export class ChatOrchestrator {
 
         } catch (error: any) {
             console.error(`[ChatOrchestrator] Exception occurred: ${error.message}`);
-            // System failure fallback to prevent crashes - let's send the actual error back to the user
-            // so they can see if it's an API key or Rate limit issue
+            
+            // Detect rate-limit errors and return a user-friendly message
+            const isRateLimit = error.message?.includes('429') 
+                || error.message?.includes('rate limit') 
+                || error.message?.includes('RESOURCE_EXHAUSTED')
+                || error.message?.includes('too many requests');
+            
+            if (isRateLimit) {
+                return {
+                    status: 'ANSWER',
+                    answer: "I'm experiencing high demand right now. Please try again in 10-20 seconds — I'll be ready!",
+                    confidence: 'LOW'
+                };
+            }
+            
+            // System failure fallback to prevent crashes
             return {
                 status: 'NO_ANSWER',
-                answer: "System currently unavailable: " + (error.message || 'Unknown error'),
+                answer: "I'm having a temporary issue. Please try again in a moment.",
                 confidence: 'LOW'
             };
         }

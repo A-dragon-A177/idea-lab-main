@@ -183,6 +183,15 @@ public class PublicProjectController {
 
         } catch (org.springframework.web.client.HttpStatusCodeException e) {
             logger.error("[PublicChat] AI service returned error status {}: {}", e.getStatusCode(), e.getResponseBodyAsString());
+            
+            // If it's a 429 rate limit, return a user-friendly message instead of the raw error
+            if (e.getStatusCode().value() == 429) {
+                return ResponseEntity.ok(Map.of(
+                        "status", "ANSWER",
+                        "answer", "I'm experiencing high demand right now. Please try again in 10-20 seconds — I'll be ready!",
+                        "confidence", "LOW"));
+            }
+            
             return ResponseEntity.status(e.getStatusCode()).body(Map.of(
                     "error", "AI Service Error",
                     "details", e.getResponseBodyAsString()));

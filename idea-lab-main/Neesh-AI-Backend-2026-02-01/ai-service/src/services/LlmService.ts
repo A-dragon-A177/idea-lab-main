@@ -453,7 +453,7 @@ export class LlmService {
 
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-        const maxRetries = 4;
+        const maxRetries = 5;
         let lastError = '';
         let data: any = null;
 
@@ -482,11 +482,13 @@ export class LlmService {
 
             const errorBody = await response.text();
             lastError = errorBody;
-            const isTransientError = [500, 502, 503, 504].includes(response.status);
+            const isTransientError = [429, 500, 502, 503, 504].includes(response.status);
             if (isTransientError && attempt < maxRetries) {
-                // Exponential backoff: 2s, 4s, 8s, 16s
-                const waitMs = Math.pow(2, attempt) * 1000;
-                console.warn(`[LlmService] Gemini transient error (${response.status}), retrying in ${waitMs}ms (attempt ${attempt}/${maxRetries})...`);
+                // Exponential backoff: 3s, 9s, 27s for 429; 2s, 4s, 8s for 5xx
+                const waitMs = response.status === 429
+                    ? Math.pow(3, attempt) * 1000  // 3s, 9s, 27s, 81s
+                    : Math.pow(2, attempt) * 1000;  // 2s, 4s, 8s, 16s
+                console.warn(`[LlmService] Gemini error (${response.status}), retrying in ${waitMs}ms (attempt ${attempt}/${maxRetries})...`);
                 await new Promise(resolve => setTimeout(resolve, waitMs));
                 continue;
             }
@@ -498,25 +500,10 @@ export class LlmService {
                 throw new Error('Gemini API key does not have permission. Please check your API key and enable the Generative Language API.');
             }
 
-            if (response.status === 429 && attempt < maxRetries) {
-                // Parse server-suggested retry delay if available
-                let waitMs = attempt * 5000; // default: 5s, 10s, 15s, 20s
-                try {
-                    const errJson = JSON.parse(errorBody);
-                    const retryInfo = errJson?.error?.details?.find((d: any) => d['@type']?.includes('RetryInfo'));
-                    if (retryInfo?.retryDelay) {
-                        const serverDelaySec = parseInt(retryInfo.retryDelay);
-                        if (!isNaN(serverDelaySec) && serverDelaySec > 0) {
-                            waitMs = Math.min(serverDelaySec * 1000, 60000); // cap at 60s
-                        }
-                    }
-                } catch { /* ignore parse errors, use default delay */ }
-                console.warn(`[LlmService] Gemini rate limited (429), retrying in ${waitMs}ms (attempt ${attempt}/${maxRetries})...`);
-                await new Promise(resolve => setTimeout(resolve, waitMs));
-                continue;
-            }
+            // 429 is already handled by the isTransientError block above.
+            // If we reach here with a 429, all retries are exhausted.
             if (response.status === 429) {
-                throw new Error('Gemini rate limit exceeded after retries. Please try again later.');
+                throw new Error('Gemini rate limit exceeded after retries. Please try again in 10-20 seconds.');
             }
 
             throw new Error(`Gemini API error (${response.status}): ${errorBody}`);
